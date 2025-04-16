@@ -3,7 +3,7 @@ public class Applicant extends User {
 
     public Applicant(String name, String nric, int age, MaritalStatus maritalStatus) {
         super(name, nric, age, maritalStatus);
-        this.application = null; // No application at start
+        this.application = null;
     }
 
     public void applyForProject(BTOProject project) {
@@ -11,7 +11,7 @@ public class Applicant extends User {
             application = new BTOApplication(this, project);
             System.out.println("Application submitted for " + project.getProjectName());
         } else {
-            System.out.println("Already applied for a project.");
+            System.out.println("Error: Already applied for a project.");
         }
     }
 

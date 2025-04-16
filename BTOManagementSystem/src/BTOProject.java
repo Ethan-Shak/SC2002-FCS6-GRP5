@@ -18,30 +18,24 @@ public class BTOProject {
         this.isVisible = true;
     }
 
-    public List<Flat> getAvailableFlats() {
-        List<Flat> availableFlats = new ArrayList<>();
-        for (Flat flat : flats) {
-            if (flat.isAvailable()) {
-                availableFlats.add(flat);
-            }
-        }
-        return availableFlats;
-    }
-
-    // Existing getters
-    public String getNeighbourhood() {
-        return neighbourhood;
-    }
-
-    public RoomType getRoomTypes() {
-        return roomType;
-    }
-
     public String getProjectName() {
         return projectName;
     }
 
-    public void toggleVisibility(boolean status) {
-        this.isVisible = status;
+    public RoomType getRoomType() {
+        return roomType;
+    }
+
+    public boolean isVisible(Applicant applicant) {
+        if (!isVisible) {
+            return false;
+        }
+        if (applicant.getMaritalStatus() == MaritalStatus.SINGLE && applicant.getAge() >= 35 && roomType == RoomType.TWO_ROOM) {
+            return true;
+        }
+        if (applicant.getMaritalStatus() == MaritalStatus.MARRIED && applicant.getAge() >= 21) {
+            return true;
+        }
+        return false;
     }
 }
