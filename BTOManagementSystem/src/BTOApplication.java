@@ -15,44 +15,16 @@ public class BTOApplication {
     }
 
     // Getters
-    public Applicant getApplicant() {
-        return applicant;
-    }
-
-    public RoomType getRoomType() {
-        return roomType;
-    }
-
-    public BTOProject getProject() {
-        return project;
-    }
-
-    public ApplicationStatus getApplicationStatus() {
-        return applicationStatus;
-    }
-
-    public WithdrawalStatus getWithdrawalStatus() {
-        return withdrawalStatus;
-    }
+    public Applicant getApplicant() { return applicant; }
+    public RoomType getRoomType() { return roomType; }
+    public BTOProject getProject() { return project; }
+    public ApplicationStatus getApplicationStatus() { return applicationStatus; }
+    public WithdrawalStatus getWithdrawalStatus() { return withdrawalStatus; }
 
     // Setters
-    public void setApplicant(Applicant applicant) {
-        this.applicant = applicant;
-    }
-
-    public void setRoomType(RoomType roomType) {
-        this.roomType = roomType;
-    }
-
-    public void setProject(BTOProject project) {
-        this.project = project;
-    }
-
-    public void setApplicationStatus(ApplicationStatus applicationStatus) {
-        this.applicationStatus = applicationStatus;
-    }
-
-    public void setWithdrawalStatus(WithdrawalStatus withdrawalStatus) {
-        this.withdrawalStatus = withdrawalStatus;
-    }
+    public void setApplicant(Applicant applicant) { this.applicant = applicant; }
+    public void setRoomType(RoomType roomType) { this.roomType = roomType; }
+    public void setProject(BTOProject project) { this.project = project; }
+    public void setApplicationStatus(ApplicationStatus applicationStatus) { this.applicationStatus = applicationStatus; }
+    public void setWithdrawalStatus(WithdrawalStatus withdrawalStatus) { this.withdrawalStatus = withdrawalStatus; }
 }
