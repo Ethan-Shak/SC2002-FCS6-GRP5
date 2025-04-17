@@ -12,7 +12,6 @@ public class Applicant extends User {
             application = new BTOApplication(this, project);
             System.out.println("Application submitted for " + project.getProjectName());
         } else {
-            System.out.println("Already applied for a project.");
             System.out.println("Error: Already applied for a project.");
         }
     }
