@@ -4,7 +4,17 @@ public class Applicant extends User {
     public Applicant(String name, String nric, int age, MaritalStatus maritalStatus) {
         super(name, nric, age, maritalStatus);
         this.application = null; // No application at start
-        this.application = null;
+    }
+
+    public boolean login(String password) {
+        SingpassAccount account = getSingpassAccount();
+        if (account.authenticate(password)) {
+            System.out.println("Login successful");
+            return true;
+        } else {
+            System.out.println("Login failed: Invalid credentials");
+            return false;
+        }
     }
 
     public void applyForProject(BTOProject project) {
@@ -15,3 +25,4 @@ public class Applicant extends User {
             System.out.println("Error: Already applied for a project.");
         }
     }
+}
