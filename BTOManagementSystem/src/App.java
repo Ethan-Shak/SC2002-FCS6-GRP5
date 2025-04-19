@@ -2,11 +2,13 @@ import java.util.Scanner;
 
 public class App {
     private static Scanner scanner = new Scanner(System.in);
-    private static Applicant currentUser = null;
+    private static User currentUser = null;
 
     public static void main(String[] args) {
-        // Load applicants data at startup
+        // Load data at startup
         ApplicantManager.loadApplicantsFromCSV("ApplicantList.csv");
+        ManagerManager.loadManagersFromCSV("ManagerList.csv");
+        OfficerManager.loadOfficersFromCSV("OfficerList.csv");
         
         boolean running = true;
         while (running) {
@@ -81,10 +83,28 @@ public class App {
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
+        // Try to authenticate as an applicant
         if (ApplicantManager.authenticateApplicant(nric, password)) {
             currentUser = ApplicantManager.getApplicant(nric);
             System.out.println("Welcome, " + currentUser.getName() + "!");
+            return;
         }
+        
+        // Try to authenticate as a manager
+        if (ManagerManager.authenticateManager(nric, password)) {
+            currentUser = ManagerManager.getManager(nric);
+            System.out.println("Welcome, " + currentUser.getName() + "!");
+            return;
+        }
+        
+        // Try to authenticate as an officer
+        if (OfficerManager.authenticateOfficer(nric, password)) {
+            currentUser = OfficerManager.getOfficer(nric);
+            System.out.println("Welcome, " + currentUser.getName() + "!");
+            return;
+        }
+        
+        System.out.println("Login failed: Invalid credentials");
     }
 
     private static void handleChangePassword() {
@@ -104,7 +124,17 @@ public class App {
         
         SingpassAccount account = currentUser.getSingpassAccount();
         if (account.changePassword(currentPassword, newPassword)) {
-            ApplicantManager.updateApplicantPassword(currentUser.getNRIC(), newPassword);
+            // Update password in the appropriate manager based on user type
+            String nric = currentUser.getNRIC();
+            if (currentUser instanceof HDBOfficer) {
+                // Check for HDBOfficer first since it extends Applicant
+                OfficerManager.updateOfficerPassword(nric, newPassword);
+            } else if (currentUser instanceof HDBManager) {
+                ManagerManager.updateManagerPassword(nric, newPassword);
+            } else if (currentUser instanceof Applicant) {
+                ApplicantManager.updateApplicantPassword(nric, newPassword);
+            }
+            
             System.out.println("Password changed successfully. Please login again.");
             currentUser = null;
         } else {

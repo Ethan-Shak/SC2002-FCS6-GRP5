@@ -1,9 +1,9 @@
-public class HDBOfficer extends User {
+public class HDBOfficer extends Applicant {
     private BTOProject assignedProject;
     private String registrationStatus;
 
-    public HDBOfficer(String name, String nric, int age, MaritalStatus maritalStatus) {
-        super(name, nric, age, maritalStatus);
+    public HDBOfficer(String name, String nric, int age, MaritalStatus maritalStatus, String password) {
+        super(name, nric, age, maritalStatus, password);
         this.registrationStatus = "Pending"; // Default status
     }
 
