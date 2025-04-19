@@ -59,7 +59,7 @@ public class ProjectManager {
                     // }
                     
                     // Create the project
-                    HDBManager manager = ManagerManager.getManagerByName(managerName);
+                    HDBManager manager = ManagerController.getManagerByName(managerName);
                     BTOProject project = new BTOProject(projectName, neighborhood, type1, manager);
                     
                     // Set additional project details
@@ -89,7 +89,7 @@ public class ProjectManager {
                     for (String officerName : officerNames) {
                         officerName = officerName.trim();
                         if (!officerName.isEmpty()) {
-                            HDBOfficer officer = OfficerManager.getOfficerByName(officerName);
+                            HDBOfficer officer = OfficerController.getOfficerByName(officerName);
                             if (officer != null) {
                                 boolean added = project.addOfficer(officer);
                                 if (added) {
