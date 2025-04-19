@@ -52,17 +52,29 @@ public class App {
     private static void displayLoggedInMenu() {
         System.out.println("\n=== Welcome, " + currentUser.getName() + " ===");
         System.out.println("1. View Projects");
+        
         if (currentUser instanceof HDBManager) {
             System.out.println("2. Toggle Project Visibility");
             System.out.println("3. Manage Applications");
-        }
-        if (currentUser instanceof Applicant) {
+            System.out.println("4. Change Password");
+            System.out.println("5. Logout");
+        } else if (currentUser instanceof HDBOfficer) {
+            // HDB Officer menu (includes both applicant and officer options)
             System.out.println("2. Apply for Project");
             System.out.println("3. Withdraw Application");
             System.out.println("4. View Application Status");
+            System.out.println("5. Book Flat for Applicant");
+            System.out.println("6. Change Password");
+            System.out.println("7. Logout");
+        } else if (currentUser instanceof Applicant) {
+            // Regular Applicant menu
+            System.out.println("2. Apply for Project");
+            System.out.println("3. Withdraw Application");
+            System.out.println("4. View Application Status");
+            System.out.println("5. Change Password");
+            System.out.println("6. Logout");
         }
-        System.out.println((currentUser instanceof Applicant ? "5" : "4") + ". Change Password");
-        System.out.println((currentUser instanceof Applicant ? "6" : "5") + ". Logout");
+        
         System.out.print("Enter your choice: ");
     }
 
@@ -87,28 +99,38 @@ public class App {
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
-        // Try to authenticate as an applicant
-        if (ApplicantManager.authenticateApplicant(nric, password)) {
-            currentUser = ApplicantManager.getApplicant(nric);
-            System.out.println("Welcome, " + currentUser.getName() + "!");
-            return;
+        // Try to authenticate without showing intermediate error messages
+        boolean loginSuccess = false;
+        boolean userExists = false;
+        
+        // Check if user exists in any of the managers
+        if (OfficerManager.getOfficer(nric) != null) {
+            userExists = true;
+            if (OfficerManager.authenticateOfficer(nric, password)) {
+                currentUser = OfficerManager.getOfficer(nric);
+                loginSuccess = true;
+            }
+        } else if (ApplicantManager.getApplicant(nric) != null) {
+            userExists = true;
+            if (ApplicantManager.authenticateApplicant(nric, password)) {
+                currentUser = ApplicantManager.getApplicant(nric);
+                loginSuccess = true;
+            }
+        } else if (ManagerManager.getManager(nric) != null) {
+            userExists = true;
+            if (ManagerManager.authenticateManager(nric, password)) {
+                currentUser = ManagerManager.getManager(nric);
+                loginSuccess = true;
+            }
         }
         
-        // Try to authenticate as a manager
-        if (ManagerManager.authenticateManager(nric, password)) {
-            currentUser = ManagerManager.getManager(nric);
+        if (loginSuccess) {
             System.out.println("Welcome, " + currentUser.getName() + "!");
-            return;
+        } else if (userExists) {
+            System.out.println("Login failed: Invalid credentials");
+        } else {
+            System.out.println("Login failed: Not a valid user");
         }
-        
-        // Try to authenticate as an officer
-        if (OfficerManager.authenticateOfficer(nric, password)) {
-            currentUser = OfficerManager.getOfficer(nric);
-            System.out.println("Welcome, " + currentUser.getName() + "!");
-            return;
-        }
-        
-        System.out.println("Login failed: Invalid credentials");
     }
 
     private static void handleChangePassword() {
@@ -181,7 +203,15 @@ public class App {
     private static void displayProjectDetails(BTOProject project, boolean showVisibility) {
         System.out.println("\nProject: " + project.getProjectName());
         System.out.println("Neighborhood: " + project.getNeighbourhood());
-        System.out.println("Room Types: " + project.getRoomType());
+        
+        // Display all room types and their availability
+        System.out.println("Room Types:");
+        Map<RoomType, Integer> flatInventory = project.getFlatInventory();
+        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
+            RoomType roomType = entry.getKey();
+            int units = entry.getValue();
+            System.out.println("  - " + roomType + " (" + units + " units available)");
+        }
         
         if (showVisibility) {
             System.out.println("Visibility: " + (project.getVisibility() ? "On" : "Off"));
@@ -227,31 +257,7 @@ public class App {
     }
 
     private static void handleLoggedInChoice(int choice) {
-        if (currentUser instanceof Applicant) {
-            switch (choice) {
-                case 1:
-                    displayProjects();
-                    break;
-                case 2:
-                    applyForProject();
-                    break;
-                case 3:
-                    withdrawApplication();
-                    break;
-                case 4:
-                    viewApplicationStatus();
-                    break;
-                case 5:
-                    handleChangePassword();
-                    break;
-                case 6:
-                    currentUser = null;
-                    System.out.println("Logged out successfully.");
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
-        } else if (currentUser instanceof HDBManager) {
+        if (currentUser instanceof HDBManager) {
             switch (choice) {
                 case 1:
                     displayProjects();
@@ -278,9 +284,45 @@ public class App {
                     displayProjects();
                     break;
                 case 2:
-                    handleChangePassword();
+                    applyForProject();
                     break;
                 case 3:
+                    withdrawApplication();
+                    break;
+                case 4:
+                    viewApplicationStatus();
+                    break;
+                case 5:
+                    bookFlatForApplicant();
+                    break;
+                case 6:
+                    handleChangePassword();
+                    break;
+                case 7:
+                    currentUser = null;
+                    System.out.println("Logged out successfully.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } else if (currentUser instanceof Applicant) {
+            switch (choice) {
+                case 1:
+                    displayProjects();
+                    break;
+                case 2:
+                    applyForProject();
+                    break;
+                case 3:
+                    withdrawApplication();
+                    break;
+                case 4:
+                    viewApplicationStatus();
+                    break;
+                case 5:
+                    handleChangePassword();
+                    break;
+                case 6:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -314,6 +356,27 @@ public class App {
             if (project.isVisible(applicant)) {
                 System.out.println(index + ". " + project.getProjectName() + 
                     " (" + project.getNeighbourhood() + ")");
+                
+                // Display all eligible room types for this project
+                System.out.println("   Available Room Types:");
+                Map<RoomType, Integer> flatInventory = project.getFlatInventory();
+                for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
+                    RoomType roomType = entry.getKey();
+                    int units = entry.getValue();
+                    
+                    // Check if applicant is eligible for this room type
+                    boolean isEligible = false;
+                    if (applicant.getMaritalStatus() == MaritalStatus.SINGLE) {
+                        isEligible = applicant.getAge() >= 35 && roomType == RoomType.TWO_ROOM;
+                    } else if (applicant.getMaritalStatus() == MaritalStatus.MARRIED) {
+                        isEligible = applicant.getAge() >= 21;
+                    }
+                    
+                    if (isEligible && units > 0) {
+                        System.out.println("      - " + roomType + " (" + units + " units available)");
+                    }
+                }
+                
                 eligibleProjects.add(project);
                 index++;
             }
@@ -326,14 +389,53 @@ public class App {
         
         System.out.print("Enter project number to apply: ");
         try {
-            int choice = Integer.parseInt(scanner.nextLine());
-            if (choice >= 1 && choice <= eligibleProjects.size()) {
-                BTOProject selectedProject = eligibleProjects.get(choice - 1);
+            int projectChoice = Integer.parseInt(scanner.nextLine());
+            if (projectChoice >= 1 && projectChoice <= eligibleProjects.size()) {
+                BTOProject selectedProject = eligibleProjects.get(projectChoice - 1);
                 
-                // Apply for the project
-                ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
-                if (approvalManager.applyForProject(applicant, selectedProject)) {
-                    System.out.println("Application submitted successfully.");
+                // Get available room types for the selected project
+                Map<RoomType, Integer> flatInventory = selectedProject.getFlatInventory();
+                List<RoomType> availableRoomTypes = new ArrayList<>();
+                
+                System.out.println("\nAvailable Room Types for " + selectedProject.getProjectName() + ":");
+                int roomTypeIndex = 1;
+                for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
+                    RoomType roomType = entry.getKey();
+                    int units = entry.getValue();
+                    
+                    // Check if applicant is eligible for this room type
+                    boolean isEligible = false;
+                    if (applicant.getMaritalStatus() == MaritalStatus.SINGLE) {
+                        isEligible = applicant.getAge() >= 35 && roomType == RoomType.TWO_ROOM;
+                    } else if (applicant.getMaritalStatus() == MaritalStatus.MARRIED) {
+                        isEligible = applicant.getAge() >= 21;
+                    }
+                    
+                    if (isEligible && units > 0) {
+                        System.out.println(roomTypeIndex + ". " + roomType + " (" + units + " units available)");
+                        availableRoomTypes.add(roomType);
+                        roomTypeIndex++;
+                    }
+                }
+                
+                if (availableRoomTypes.isEmpty()) {
+                    System.out.println("No eligible room types available in this project.");
+                    return;
+                }
+                
+                System.out.print("Enter room type number to apply: ");
+                int roomTypeChoice = Integer.parseInt(scanner.nextLine());
+                if (roomTypeChoice >= 1 && roomTypeChoice <= availableRoomTypes.size()) {
+                    RoomType selectedRoomType = availableRoomTypes.get(roomTypeChoice - 1);
+                    
+                    // Apply for the project with the selected room type
+                    ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
+                    if (approvalManager.applyForProject(applicant, selectedProject, selectedRoomType)) {
+                        System.out.println("Application submitted successfully for " + selectedProject.getProjectName() + 
+                            " with room type " + selectedRoomType);
+                    }
+                } else {
+                    System.out.println("Invalid room type number.");
                 }
             } else {
                 System.out.println("Invalid project number.");
@@ -393,7 +495,7 @@ public class App {
         System.out.println("\n=== Application Status ===");
         System.out.println("Project: " + project.getProjectName());
         System.out.println("Neighbourhood: " + project.getNeighbourhood());
-        System.out.println("Room Type: " + project.getRoomType());
+        System.out.println("Room Type: " + application.getRoomType());
         
         // Display application status with description
         System.out.println("Application Status: " + status);
@@ -470,8 +572,8 @@ public class App {
             
             System.out.println((i + 1) + ". Project: " + project.getProjectName());
             System.out.println("   Applicant: " + applicant.getName() + " (NRIC: " + applicant.getNRIC() + ")");
-            System.out.println("   Room Type: " + project.getRoomType());
-            System.out.println("   Available Units: " + project.getFlatInventory().get(project.getRoomType()));
+            System.out.println("   Room Type: " + application.getRoomType());
+            System.out.println("   Available Units: " + project.getFlatInventory().get(application.getRoomType()));
         }
         
         System.out.print("\nEnter application number to review (0 to go back): ");
@@ -498,8 +600,8 @@ public class App {
         System.out.println("\n=== Review Application ===");
         System.out.println("Project: " + project.getProjectName());
         System.out.println("Applicant: " + applicant.getName() + " (NRIC: " + applicant.getNRIC() + ")");
-        System.out.println("Room Type: " + project.getRoomType());
-        System.out.println("Available Units: " + project.getFlatInventory().get(project.getRoomType()));
+        System.out.println("Room Type: " + application.getRoomType());
+        System.out.println("Available Units: " + project.getFlatInventory().get(application.getRoomType()));
         
         System.out.println("\n1. Approve");
         System.out.println("2. Reject");
@@ -510,11 +612,11 @@ public class App {
             switch (choice) {
                 case 1:
                     // Check if there are available units
-                    int availableUnits = project.getFlatInventory().get(project.getRoomType());
+                    int availableUnits = project.getFlatInventory().get(application.getRoomType());
                     if (availableUnits > 0) {
                         application.setApplicationStatus(ApplicationStatus.SUCCESSFUL);
                         // Decrease available units
-                        project.getFlatInventory().put(project.getRoomType(), availableUnits - 1);
+                        project.getFlatInventory().put(application.getRoomType(), availableUnits - 1);
                         System.out.println("Application approved successfully.");
                     } else {
                         System.out.println("Cannot approve application: No available units.");
@@ -526,6 +628,103 @@ public class App {
                     break;
                 default:
                     System.out.println("Invalid choice.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void bookFlatForApplicant() {
+        if (!(currentUser instanceof HDBOfficer)) {
+            System.out.println("This option is only available for HDB officers.");
+            return;
+        }
+        
+        HDBOfficer officer = (HDBOfficer) currentUser;
+        
+        // Get applicant NRIC
+        System.out.print("Enter applicant NRIC: ");
+        String applicantNRIC = scanner.nextLine();
+        
+        // Validate NRIC format
+        if (!applicantNRIC.matches("^[ST]\\d{7}[A-Z]$")) {
+            System.out.println("Invalid NRIC format! It must start with S or T, followed by 7 digits and an uppercase letter.");
+            return;
+        }
+        
+        // Get applicant
+        Applicant applicant = ApplicantManager.getApplicant(applicantNRIC);
+        if (applicant == null) {
+            System.out.println("Applicant not found.");
+            return;
+        }
+        
+        // Check if applicant has an application
+        BTOApplication application = applicant.getApplication();
+        if (application == null) {
+            System.out.println("Applicant does not have an active application.");
+            return;
+        }
+        
+        // Check if application is successful
+        if (application.getApplicationStatus() != ApplicationStatus.SUCCESSFUL) {
+            System.out.println("Applicant's application is not in SUCCESSFUL status.");
+            return;
+        }
+        
+        // Check if applicant already has a booking
+        Flat existingBooking = FlatBookingManager.getBooking(applicantNRIC);
+        if (existingBooking != null) {
+            System.out.println("Applicant already has a booking.");
+            return;
+        }
+        
+        // Get project
+        BTOProject project = application.getProject();
+        
+        // Check if officer is assigned to the project
+        if (!project.getOfficers().contains(officer)) {
+            System.out.println("You are not assigned to this project.");
+            return;
+        }
+        
+        // Get the room type the applicant applied for
+        RoomType appliedRoomType = application.getRoomType();
+        
+        // Display available flats of the same room type
+        List<Flat> availableFlats = project.getAvailableFlats();
+        List<Flat> matchingFlats = new ArrayList<>();
+        
+        for (Flat flat : availableFlats) {
+            if (flat.getType() == appliedRoomType) {
+                matchingFlats.add(flat);
+            }
+        }
+        
+        if (matchingFlats.isEmpty()) {
+            System.out.println("No available " + appliedRoomType + " flats in this project.");
+            return;
+        }
+        
+        System.out.println("\n=== Available " + appliedRoomType + " Flats ===");
+        for (int i = 0; i < matchingFlats.size(); i++) {
+            Flat flat = matchingFlats.get(i);
+            System.out.println((i + 1) + ". Flat ID: " + flat.getFlatID() + ", Type: " + flat.getType());
+        }
+        
+        System.out.print("Enter flat number to book: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= matchingFlats.size()) {
+                Flat selectedFlat = matchingFlats.get(choice - 1);
+                
+                // Book the flat
+                FlatBookingManager bookingManager = new FlatBookingManager();
+                if (bookingManager.bookFlat(applicant, officer, selectedFlat)) {
+                    System.out.println("Flat booked successfully for " + applicant.getName());
+                }
+            } else {
+                System.out.println("Invalid flat number.");
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");

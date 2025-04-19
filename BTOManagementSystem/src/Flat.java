@@ -15,7 +15,6 @@ public class Flat {
         if (isAvailable) {
             this.assignedApplicant = applicant;
             this.isAvailable = false;
-            System.out.println("Flat " + flatID + " booked successfully.");
         } else {
             System.out.println("Flat " + flatID + " is already booked.");
         }

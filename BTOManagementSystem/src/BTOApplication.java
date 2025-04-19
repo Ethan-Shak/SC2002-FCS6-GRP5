@@ -4,12 +4,13 @@ public class BTOApplication {
     private BTOProject project;
     private ApplicationStatus applicationStatus;
 
-    public BTOApplication(Applicant applicant, BTOProject project) {
+    public BTOApplication(Applicant applicant, BTOProject project, RoomType roomType) throws Exception {
         if (!project.isVisible(applicant)) {
-            throw new IllegalArgumentException("Error: Project is not visible to this applicant.");
+            throw new Exception("Project is not visible to the applicant");
         }
         this.applicant = applicant;
         this.project = project;
+        this.roomType = roomType;
         this.applicationStatus = ApplicationStatus.PENDING;
     }
 

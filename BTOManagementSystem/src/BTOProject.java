@@ -34,6 +34,17 @@ public class BTOProject {
         this.eligibleGroups = new ArrayList<>();
         this.flatInventory = new HashMap<>();
         this.isVisible = true; // True by default
+        
+        // Initialize flats based on inventory
+        int flatID = 1;
+        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
+            RoomType type = entry.getKey();
+            int count = entry.getValue();
+            
+            for (int i = 0; i < count; i++) {
+                flats.add(new Flat(flatID++, type));
+            }
+        }
     }
 
     public List<Flat> getAvailableFlats() {
@@ -110,5 +121,20 @@ public class BTOProject {
     public void setApplicationOpeningDate(LocalDateTime applicationOpeningDate) { this.applicationOpeningDate = applicationOpeningDate; }
     public void setApplicationClosingDate(LocalDateTime applicationClosingDate) { this.applicationClosingDate = applicationClosingDate; }
     public void setEligibleGroups(List<MaritalStatus> eligibleGroups) { this.eligibleGroups = eligibleGroups; }
-    public void setFlatInventory(Map<RoomType, Integer> flatInventory) { this.flatInventory = flatInventory; }
+    public void setFlatInventory(Map<RoomType, Integer> flatInventory) { 
+        this.flatInventory = flatInventory;
+        
+        // Initialize flats based on inventory
+        this.flats.clear();
+        int flatID = 1;
+        
+        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
+            RoomType roomType = entry.getKey();
+            int count = entry.getValue();
+            
+            for (int i = 0; i < count; i++) {
+                flats.add(new Flat(flatID++, roomType));
+            }
+        }
+    }
 }
