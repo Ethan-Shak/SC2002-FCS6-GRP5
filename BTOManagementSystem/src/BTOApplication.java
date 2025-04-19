@@ -5,7 +5,7 @@ public class BTOApplication {
     private ApplicationStatus applicationStatus;
 
     public BTOApplication(Applicant applicant, BTOProject project, RoomType roomType) throws Exception {
-        if (!project.isVisible(applicant)) {
+        if (!project.checkVisibility(applicant)) {
             throw new Exception("Project is not visible to the applicant");
         }
         this.applicant = applicant;

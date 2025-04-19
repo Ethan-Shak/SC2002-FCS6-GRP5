@@ -4,13 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
- * NOTE: 
- * We have an attribute and a function both named isVisible and isVisible() respectively.
- * 
- * 
- */
-
 public class BTOProject {
     private String projectName;
     private String neighbourhood;
@@ -69,7 +62,7 @@ public class BTOProject {
         officers.remove(offr);
     }
 
-    public boolean isVisible(Applicant applicant) {
+    public boolean checkVisibility(Applicant applicant) {
         // If project is not visible, return false
         if (!isVisible) {
             return false;

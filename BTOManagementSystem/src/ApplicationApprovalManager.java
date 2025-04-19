@@ -15,7 +15,7 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         }
         
         // Check if project is visible to the applicant
-        if (!project.isVisible(applicant)) {
+        if (!project.checkVisibility(applicant)) {
             System.out.println("Error: This project is not visible to you.");
             return false;
         }

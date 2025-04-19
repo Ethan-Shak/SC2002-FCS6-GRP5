@@ -1,7 +1,7 @@
-import java.util.Scanner;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 public class App {
     private static Scanner scanner = new Scanner(System.in);
@@ -9,9 +9,9 @@ public class App {
 
     public static void main(String[] args) {
         // Load data at startup
-        ApplicantManager.loadApplicantsFromCSV("ApplicantList.csv");
-        ManagerManager.loadManagersFromCSV("ManagerList.csv");
-        OfficerManager.loadOfficersFromCSV("OfficerList.csv");
+        ApplicantController.loadApplicantsFromCSV("ApplicantList.csv");
+        ManagerController.loadManagersFromCSV("ManagerList.csv");
+        OfficerController.loadOfficersFromCSV("OfficerList.csv");
         ProjectManager.loadProjectsFromCSV("ProjectList.csv");
         
         boolean running = true;
@@ -104,22 +104,22 @@ public class App {
         boolean userExists = false;
         
         // Check if user exists in any of the managers
-        if (OfficerManager.getOfficer(nric) != null) {
+        if (OfficerController.getOfficer(nric) != null) {
             userExists = true;
-            if (OfficerManager.authenticateOfficer(nric, password)) {
-                currentUser = OfficerManager.getOfficer(nric);
+            if (OfficerController.authenticateOfficer(nric, password)) {
+                currentUser = OfficerController.getOfficer(nric);
                 loginSuccess = true;
             }
-        } else if (ApplicantManager.getApplicant(nric) != null) {
+        } else if (ApplicantController.getApplicant(nric) != null) {
             userExists = true;
-            if (ApplicantManager.authenticateApplicant(nric, password)) {
-                currentUser = ApplicantManager.getApplicant(nric);
+            if (ApplicantController.authenticateApplicant(nric, password)) {
+                currentUser = ApplicantController.getApplicant(nric);
                 loginSuccess = true;
             }
-        } else if (ManagerManager.getManager(nric) != null) {
+        } else if (ManagerController.getManager(nric) != null) {
             userExists = true;
-            if (ManagerManager.authenticateManager(nric, password)) {
-                currentUser = ManagerManager.getManager(nric);
+            if (ManagerController.authenticateManager(nric, password)) {
+                currentUser = ManagerController.getManager(nric);
                 loginSuccess = true;
             }
         }
@@ -154,11 +154,11 @@ public class App {
             String nric = currentUser.getNRIC();
             if (currentUser instanceof HDBOfficer) {
                 // Check for HDBOfficer first since it extends Applicant
-                OfficerManager.updateOfficerPassword(nric, newPassword);
+                OfficerController.updateOfficerPassword(nric, newPassword);
             } else if (currentUser instanceof HDBManager) {
-                ManagerManager.updateManagerPassword(nric, newPassword);
+                ManagerController.updateManagerPassword(nric, newPassword);
             } else if (currentUser instanceof Applicant) {
-                ApplicantManager.updateApplicantPassword(nric, newPassword);
+                ApplicantController.updateApplicantPassword(nric, newPassword);
             }
             
             System.out.println("Password changed successfully. Please login again.");
@@ -186,7 +186,7 @@ public class App {
         } else if (currentUser instanceof Applicant) {
             // Applicants can only see projects visible to their user group
             for (BTOProject project : projects) {
-                if (project.isVisible((Applicant)currentUser)) {
+                if (project.checkVisibility((Applicant)currentUser)) {
                     displayProjectDetails(project, false);
                 }
             }
@@ -353,7 +353,7 @@ public class App {
         System.out.println("\n=== Available Projects ===");
         int index = 1;
         for (BTOProject project : projects) {
-            if (project.isVisible(applicant)) {
+            if (project.checkVisibility(applicant)) {
                 System.out.println(index + ". " + project.getProjectName() + 
                     " (" + project.getNeighbourhood() + ")");
                 
@@ -653,7 +653,7 @@ public class App {
         }
         
         // Get applicant
-        Applicant applicant = ApplicantManager.getApplicant(applicantNRIC);
+        Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
         if (applicant == null) {
             System.out.println("Applicant not found.");
             return;

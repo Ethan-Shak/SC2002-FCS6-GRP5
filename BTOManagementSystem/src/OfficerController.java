@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OfficerManager {
+public class OfficerController {
     private static Map<String, HDBOfficer> officers = new HashMap<>(); // NRIC as key
     private static final String CSV_FILE = "OfficerList.csv";
 
