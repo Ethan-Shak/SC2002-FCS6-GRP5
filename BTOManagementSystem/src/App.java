@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.List;
 
 public class App {
     private static Scanner scanner = new Scanner(System.in);
@@ -34,9 +35,19 @@ public class App {
                 
                 switch (choice) {
                     case 1:
-                        handleChangePassword();
+                        displayProjects();
                         break;
                     case 2:
+                        if (currentUser instanceof HDBManager) {
+                            toggleProjectVisibility();
+                        } else {
+                            System.out.println("This option is only available for HDB Managers.");
+                        }
+                        break;
+                    case 3:
+                        handleChangePassword();
+                        break;
+                    case 4:
                         currentUser = null;
                         System.out.println("Logged out successfully.");
                         break;
@@ -58,8 +69,12 @@ public class App {
 
     private static void displayLoggedInMenu() {
         System.out.println("\n=== Welcome, " + currentUser.getName() + " ===");
-        System.out.println("1. Change Password");
-        System.out.println("2. Logout");
+        System.out.println("1. View Projects");
+        if (currentUser instanceof HDBManager) {
+            System.out.println("2. Toggle Project Visibility");
+        }
+        System.out.println("3. Change Password");
+        System.out.println("4. Logout");
         System.out.print("Enter your choice: ");
     }
 
@@ -140,6 +155,86 @@ public class App {
             currentUser = null;
         } else {
             System.out.println("Current password is incorrect!");
+        }
+    }
+
+    private static void displayProjects() {
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        
+        if (projects.isEmpty()) {
+            System.out.println("No projects available.");
+            return;
+        }
+        
+        System.out.println("\n=== Available Projects ===");
+        
+        if (currentUser instanceof HDBManager) {
+            // Managers can see all projects regardless of visibility
+            for (BTOProject project : projects) {
+                displayProjectDetails(project, true);
+            }
+        } else if (currentUser instanceof Applicant) {
+            // Applicants can only see projects visible to their user group
+            for (BTOProject project : projects) {
+                if (project.isVisible((Applicant)currentUser)) {
+                    displayProjectDetails(project, false);
+                }
+            }
+        } else if (currentUser instanceof HDBOfficer) {
+            // Officers can see all projects they are assigned to
+            for (BTOProject project : projects) {
+                if (project.getOfficers().contains(currentUser)) {
+                    displayProjectDetails(project, false);
+                }
+            }
+        }
+    }
+    
+    private static void displayProjectDetails(BTOProject project, boolean showVisibility) {
+        System.out.println("\nProject: " + project.getProjectName());
+        System.out.println("Neighborhood: " + project.getNeighbourhood());
+        System.out.println("Room Types: " + project.getRoomType());
+        
+        if (showVisibility) {
+            System.out.println("Visibility: " + (project.getVisibility() ? "On" : "Off"));
+        }
+        
+        System.out.println("Application Period: " + 
+            project.getApplicationOpeningDate().toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + 
+            " to " + 
+            project.getApplicationClosingDate().toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        
+        System.out.println("Manager: " + (project.getManager() != null ? project.getManager().getName() : "Not assigned"));
+        System.out.println("Officers: " + project.getNumberOfOfficers());
+    }
+    
+    private static void toggleProjectVisibility() {
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        
+        if (projects.isEmpty()) {
+            System.out.println("No projects available.");
+            return;
+        }
+        
+        System.out.println("\n=== Projects ===");
+        for (int i = 0; i < projects.size(); i++) {
+            BTOProject project = projects.get(i);
+            System.out.println((i + 1) + ". " + project.getProjectName() + 
+                " (Visibility: " + (project.getVisibility() ? "On" : "Off") + ")");
+        }
+        
+        System.out.print("Enter project number to toggle visibility: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= projects.size()) {
+                BTOProject project = projects.get(choice - 1);
+                project.setVisibility(!project.getVisibility());
+                System.out.println("Project visibility toggled to: " + (project.getVisibility() ? "On" : "Off"));
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
         }
     }
 }

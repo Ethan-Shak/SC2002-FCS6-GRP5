@@ -59,11 +59,21 @@ public class OfficerManager {
     }
 
     public static HDBOfficer getOfficerByName(String name) {
+        // Debug output commented out
+        // System.out.println("Looking for officer with name: '" + name + "'");
+        String normalizedName = name.trim();
         for (HDBOfficer officer : officers.values()) {
-            if (officer.getName().equals(name)) {
+            String officerName = officer.getName().trim();
+            // Debug output commented out
+            // System.out.println("Checking officer: '" + officerName + "'");
+            if (officerName.equalsIgnoreCase(normalizedName)) {
+                // Debug output commented out
+                // System.out.println("Found officer: " + officer.getName());
                 return officer;
             }
         }
+        // Debug output commented out
+        // System.out.println("Officer not found with name: '" + name + "'");
         return null;
     }
 
