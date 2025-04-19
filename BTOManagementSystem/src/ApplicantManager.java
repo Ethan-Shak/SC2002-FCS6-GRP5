@@ -81,8 +81,10 @@ public class ApplicantManager {
     public static void updateApplicantPassword(String nric, String newPassword) {
         Applicant applicant = applicants.get(nric);
         if (applicant != null) {
-            applicant.getSingpassAccount().resetPassword(newPassword);
-            saveApplicantsToCSV();
+            SingpassAccount account = applicant.getSingpassAccount();
+            if (account.changePassword(account.getPassword(), newPassword)) {
+                saveApplicantsToCSV();
+            }
         }
     }
 } 

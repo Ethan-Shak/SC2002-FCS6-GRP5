@@ -102,7 +102,8 @@ public class App {
             return;
         }
         
-        if (currentUser.getSingpassAccount().authenticate(currentPassword)) {
+        SingpassAccount account = currentUser.getSingpassAccount();
+        if (account.changePassword(currentPassword, newPassword)) {
             ApplicantManager.updateApplicantPassword(currentUser.getNRIC(), newPassword);
             System.out.println("Password changed successfully. Please login again.");
             currentUser = null;
