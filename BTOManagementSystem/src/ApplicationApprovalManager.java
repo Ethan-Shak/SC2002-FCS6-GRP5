@@ -64,10 +64,8 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
             return false;
         }
         
-        // Set withdrawal status to PENDING
-        application.setWithdrawalStatus(WithdrawalStatus.PENDING);
-        System.out.println("Withdrawal request submitted for " + project.getProjectName());
-        return true;
+        // Immediately approve withdrawal
+        return approveWithdrawal(applicant);
     }
     
     // Helper method to check if an applicant is eligible for a project
@@ -93,11 +91,10 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
     // Method to approve a withdrawal request
     public boolean approveWithdrawal(Applicant applicant) {
         BTOApplication application = applications.get(applicant.getNRIC());
-        if (application != null && application.getWithdrawalStatus() == WithdrawalStatus.PENDING) {
-            application.setWithdrawalStatus(WithdrawalStatus.APPROVED);
+        if (application != null) {
             applications.remove(applicant.getNRIC());
             applicant.setApplication(null);
-            System.out.println("Withdrawal request approved for " + applicant.getName());
+            System.out.println("Application withdrawn successfully for " + applicant.getName());
             return true;
         }
         return false;
