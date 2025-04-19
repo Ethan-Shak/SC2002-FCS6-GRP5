@@ -59,13 +59,26 @@ public class BTOProject {
     }
 
     public boolean isVisible(Applicant applicant) {
+        // If project is not visible, return false
         if (!isVisible) {
             return false;
-        } else if (applicant.getMaritalStatus() == MaritalStatus.SINGLE && applicant.getAge() >= 35 && roomType == RoomType.TWO_ROOM) {
-            return true;
-        } else if (applicant.getMaritalStatus() == MaritalStatus.MARRIED && applicant.getAge() >= 21) {
-            return true;
         }
+        
+        // Check if the applicant's marital status is in the eligible groups
+        if (!eligibleGroups.contains(applicant.getMaritalStatus())) {
+            return false;
+        }
+        
+        // Singles, 35 years old and above, can ONLY apply for 2-Room
+        if (applicant.getMaritalStatus() == MaritalStatus.SINGLE) {
+            return applicant.getAge() >= 35 && flatInventory.containsKey(RoomType.TWO_ROOM);
+        }
+        
+        // Married, 21 years old and above, can apply for any flat types
+        if (applicant.getMaritalStatus() == MaritalStatus.MARRIED) {
+            return applicant.getAge() >= 21 && !flatInventory.isEmpty();
+        }
+        
         return false;
     }
 
