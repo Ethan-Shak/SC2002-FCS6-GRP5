@@ -7,7 +7,7 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
     private static Map<String, BTOApplication> applications = new HashMap<>();
     
     @Override
-    public boolean applyForProject(Applicant applicant, BTOProject project) {
+    public boolean applyForProject(Applicant applicant, BTOProject project, RoomType roomType) {
         // Check if applicant already has an application
         if (applications.containsKey(applicant.getNRIC())) {
             System.out.println("Error: You have already applied for a project.");
@@ -35,7 +35,7 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         
         // Create and store the application
         try {
-            BTOApplication application = new BTOApplication(applicant, project);
+            BTOApplication application = new BTOApplication(applicant, project, roomType);
             applications.put(applicant.getNRIC(), application);
             
             // Update the applicant's application reference
@@ -43,14 +43,15 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
             
             System.out.println("Application submitted successfully for " + project.getProjectName());
             return true;
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error applying for project: " + e.getMessage());
             return false;
         }
     }
     
+    // Method to approve a withdrawal request
     @Override
-    public boolean withdrawApplication(Applicant applicant, BTOProject project) {
+    public boolean approveWithdrawal(Applicant applicant) {
         // Check if applicant has an application
         BTOApplication application = applications.get(applicant.getNRIC());
         if (application == null) {
@@ -58,14 +59,11 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
             return false;
         }
         
-        // Check if the application is for the specified project
-        if (!application.getProject().equals(project)) {
-            System.out.println("Error: Your application is not for this project.");
-            return false;
-        }
-        
-        // Immediately approve withdrawal
-        return approveWithdrawal(applicant);
+        // Remove the application
+        applications.remove(applicant.getNRIC());
+        applicant.setApplication(null);
+        System.out.println("Application withdrawn successfully.");
+        return true;
     }
     
     // Helper method to check if an applicant is eligible for a project
@@ -88,18 +86,6 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         return false;
     }
     
-    // Method to approve a withdrawal request
-    public boolean approveWithdrawal(Applicant applicant) {
-        BTOApplication application = applications.get(applicant.getNRIC());
-        if (application != null) {
-            applications.remove(applicant.getNRIC());
-            applicant.setApplication(null);
-            System.out.println("Application withdrawn successfully for " + applicant.getName());
-            return true;
-        }
-        return false;
-    }
-    
     // Method to get an application by applicant NRIC
     public static BTOApplication getApplication(String applicantNRIC) {
         return applications.get(applicantNRIC);
@@ -108,5 +94,31 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
     // Method to get all applications
     public static Map<String, BTOApplication> getAllApplications() {
         return new HashMap<>(applications);
+    }
+    
+    @Override
+    public boolean approveApplication(Applicant applicant) {
+        BTOApplication application = applications.get(applicant.getNRIC());
+        if (application == null) {
+            System.out.println("Error: Applicant does not have an active application.");
+            return false;
+        }
+        
+        application.setApplicationStatus(ApplicationStatus.SUCCESSFUL);
+        System.out.println("Application approved successfully.");
+        return true;
+    }
+    
+    @Override
+    public boolean rejectApplication(Applicant applicant) {
+        BTOApplication application = applications.get(applicant.getNRIC());
+        if (application == null) {
+            System.out.println("Error: Applicant does not have an active application.");
+            return false;
+        }
+        
+        application.setApplicationStatus(ApplicationStatus.UNSUCCESSFUL);
+        System.out.println("Application rejected.");
+        return true;
     }
 } 

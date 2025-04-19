@@ -17,10 +17,14 @@ public class Applicant extends User {
         }
     }
 
-    public void applyForProject(BTOProject project) {
+    public void applyForProject(BTOProject project, RoomType roomType) {
         if (application == null) {
-            application = new BTOApplication(this, project);
-            System.out.println("Application submitted for " + project.getProjectName());
+            try {
+                application = new BTOApplication(this, project, roomType);
+                System.out.println("Application submitted for " + project.getProjectName());
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         } else {
             System.out.println("Error: Already applied for a project.");
         }
