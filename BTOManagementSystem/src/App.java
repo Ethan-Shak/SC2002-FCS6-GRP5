@@ -57,9 +57,10 @@ public class App {
         if (currentUser instanceof Applicant) {
             System.out.println("2. Apply for Project");
             System.out.println("3. Withdraw Application");
+            System.out.println("4. View Application Status");
         }
-        System.out.println((currentUser instanceof Applicant ? "4" : "3") + ". Change Password");
-        System.out.println((currentUser instanceof Applicant ? "5" : "4") + ". Logout");
+        System.out.println((currentUser instanceof Applicant ? "5" : "3") + ". Change Password");
+        System.out.println((currentUser instanceof Applicant ? "6" : "4") + ". Logout");
         System.out.print("Enter your choice: ");
     }
 
@@ -236,9 +237,12 @@ public class App {
                     withdrawApplication();
                     break;
                 case 4:
-                    handleChangePassword();
+                    viewApplicationStatus();
                     break;
                 case 5:
+                    handleChangePassword();
+                    break;
+                case 6:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -359,6 +363,54 @@ public class App {
             if (approvalManager.withdrawApplication(applicant, project)) {
                 System.out.println("Withdrawal request submitted successfully.");
             }
+        }
+    }
+
+    private static void viewApplicationStatus() {
+        if (!(currentUser instanceof Applicant)) {
+            System.out.println("This option is only available for applicants.");
+            return;
+        }
+        
+        Applicant applicant = (Applicant) currentUser;
+        
+        // Check if applicant has an application
+        BTOApplication application = applicant.getApplication();
+        if (application == null) {
+            System.out.println("You do not have an active application.");
+            return;
+        }
+        
+        BTOProject project = application.getProject();
+        ApplicationStatus status = application.getApplicationStatus();
+        WithdrawalStatus withdrawalStatus = application.getWithdrawalStatus();
+        
+        System.out.println("\n=== Application Status ===");
+        System.out.println("Project: " + project.getProjectName());
+        System.out.println("Neighbourhood: " + project.getNeighbourhood());
+        System.out.println("Room Type: " + project.getRoomType());
+        
+        // Display application status with description
+        System.out.println("Application Status: " + status);
+        switch (status) {
+            case PENDING:
+                System.out.println("  - No conclusive decision made about the outcome of the application");
+                break;
+            case SUCCESSFUL:
+                System.out.println("  - Outcome of the application is successful, you are invited to make a flat booking with the HDB Officer");
+                break;
+            case UNSUCCESSFUL:
+                System.out.println("  - Outcome of the application is unsuccessful, you cannot make a flat booking for this application");
+                System.out.println("  - You may apply for another project");
+                break;
+            case BOOKED:
+                System.out.println("  - You have secured a unit after a successful application and completed a flat booking with the HDB Officer");
+                break;
+        }
+        
+        // Display withdrawal status if applicable
+        if (withdrawalStatus != null && withdrawalStatus != WithdrawalStatus.NONE) {
+            System.out.println("Withdrawal Status: " + withdrawalStatus);
         }
     }
 }
