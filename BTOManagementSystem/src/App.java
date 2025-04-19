@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.List;
+import java.util.ArrayList;
 
 public class App {
     private static Scanner scanner = new Scanner(System.in);
@@ -33,27 +34,7 @@ public class App {
                 displayLoggedInMenu();
                 int choice = getUserChoice();
                 
-                switch (choice) {
-                    case 1:
-                        displayProjects();
-                        break;
-                    case 2:
-                        if (currentUser instanceof HDBManager) {
-                            toggleProjectVisibility();
-                        } else {
-                            System.out.println("This option is only available for HDB Managers.");
-                        }
-                        break;
-                    case 3:
-                        handleChangePassword();
-                        break;
-                    case 4:
-                        currentUser = null;
-                        System.out.println("Logged out successfully.");
-                        break;
-                    default:
-                        System.out.println("Invalid choice. Please try again.");
-                }
+                handleLoggedInChoice(choice);
             }
         }
         
@@ -73,8 +54,12 @@ public class App {
         if (currentUser instanceof HDBManager) {
             System.out.println("2. Toggle Project Visibility");
         }
-        System.out.println("3. Change Password");
-        System.out.println("4. Logout");
+        if (currentUser instanceof Applicant) {
+            System.out.println("2. Apply for Project");
+            System.out.println("3. Withdraw Application");
+        }
+        System.out.println((currentUser instanceof Applicant ? "4" : "3") + ". Change Password");
+        System.out.println((currentUser instanceof Applicant ? "5" : "4") + ". Logout");
         System.out.print("Enter your choice: ");
     }
 
@@ -235,6 +220,145 @@ public class App {
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void handleLoggedInChoice(int choice) {
+        if (currentUser instanceof Applicant) {
+            switch (choice) {
+                case 1:
+                    displayProjects();
+                    break;
+                case 2:
+                    applyForProject();
+                    break;
+                case 3:
+                    withdrawApplication();
+                    break;
+                case 4:
+                    handleChangePassword();
+                    break;
+                case 5:
+                    currentUser = null;
+                    System.out.println("Logged out successfully.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } else if (currentUser instanceof HDBManager) {
+            switch (choice) {
+                case 1:
+                    displayProjects();
+                    break;
+                case 2:
+                    toggleProjectVisibility();
+                    break;
+                case 3:
+                    handleChangePassword();
+                    break;
+                case 4:
+                    currentUser = null;
+                    System.out.println("Logged out successfully.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } else if (currentUser instanceof HDBOfficer) {
+            switch (choice) {
+                case 1:
+                    displayProjects();
+                    break;
+                case 2:
+                    handleChangePassword();
+                    break;
+                case 3:
+                    currentUser = null;
+                    System.out.println("Logged out successfully.");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private static void applyForProject() {
+        if (!(currentUser instanceof Applicant)) {
+            System.out.println("This option is only available for applicants.");
+            return;
+        }
+        
+        Applicant applicant = (Applicant) currentUser;
+        
+        // Check if applicant already has an application
+        if (applicant.getApplication() != null) {
+            System.out.println("You have already applied for a project.");
+            return;
+        }
+        
+        // Display available projects
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        List<BTOProject> eligibleProjects = new ArrayList<>();
+        
+        System.out.println("\n=== Available Projects ===");
+        int index = 1;
+        for (BTOProject project : projects) {
+            if (project.isVisible(applicant)) {
+                System.out.println(index + ". " + project.getProjectName() + 
+                    " (" + project.getNeighbourhood() + ")");
+                eligibleProjects.add(project);
+                index++;
+            }
+        }
+        
+        if (eligibleProjects.isEmpty()) {
+            System.out.println("No eligible projects available for you.");
+            return;
+        }
+        
+        System.out.print("Enter project number to apply: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= eligibleProjects.size()) {
+                BTOProject selectedProject = eligibleProjects.get(choice - 1);
+                
+                // Apply for the project
+                ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
+                if (approvalManager.applyForProject(applicant, selectedProject)) {
+                    System.out.println("Application submitted successfully.");
+                }
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void withdrawApplication() {
+        if (!(currentUser instanceof Applicant)) {
+            System.out.println("This option is only available for applicants.");
+            return;
+        }
+        
+        Applicant applicant = (Applicant) currentUser;
+        
+        // Check if applicant has an application
+        BTOApplication application = applicant.getApplication();
+        if (application == null) {
+            System.out.println("You do not have an active application.");
+            return;
+        }
+        
+        BTOProject project = application.getProject();
+        System.out.println("You have an application for " + project.getProjectName() + ".");
+        System.out.print("Do you want to withdraw your application? (y/n): ");
+        
+        String response = scanner.nextLine().toLowerCase();
+        if (response.equals("y") || response.equals("yes")) {
+            ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
+            if (approvalManager.withdrawApplication(applicant, project)) {
+                System.out.println("Withdrawal request submitted successfully.");
+            }
         }
     }
 }
