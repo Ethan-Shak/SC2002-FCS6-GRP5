@@ -25,4 +25,14 @@ public class Applicant extends User {
             System.out.println("Error: Already applied for a project.");
         }
     }
+    
+    // Getter for application
+    public BTOApplication getApplication() {
+        return application;
+    }
+    
+    // Setter for application
+    public void setApplication(BTOApplication application) {
+        this.application = application;
+    }
 }
