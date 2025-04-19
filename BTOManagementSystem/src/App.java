@@ -1,6 +1,7 @@
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class App {
     private static Scanner scanner = new Scanner(System.in);
@@ -53,14 +54,15 @@ public class App {
         System.out.println("1. View Projects");
         if (currentUser instanceof HDBManager) {
             System.out.println("2. Toggle Project Visibility");
+            System.out.println("3. Manage Applications");
         }
         if (currentUser instanceof Applicant) {
             System.out.println("2. Apply for Project");
             System.out.println("3. Withdraw Application");
             System.out.println("4. View Application Status");
         }
-        System.out.println((currentUser instanceof Applicant ? "5" : "3") + ". Change Password");
-        System.out.println((currentUser instanceof Applicant ? "6" : "4") + ". Logout");
+        System.out.println((currentUser instanceof Applicant ? "5" : "4") + ". Change Password");
+        System.out.println((currentUser instanceof Applicant ? "6" : "5") + ". Logout");
         System.out.print("Enter your choice: ");
     }
 
@@ -258,9 +260,12 @@ public class App {
                     toggleProjectVisibility();
                     break;
                 case 3:
-                    handleChangePassword();
+                    manageApplications();
                     break;
                 case 4:
+                    handleChangePassword();
+                    break;
+                case 5:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -359,9 +364,10 @@ public class App {
         
         String response = scanner.nextLine().toLowerCase();
         if (response.equals("y") || response.equals("yes")) {
+            // Immediately remove the application
             ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
-            if (approvalManager.withdrawApplication(applicant, project)) {
-                System.out.println("Withdrawal request submitted successfully.");
+            if (approvalManager.approveWithdrawal(applicant)) {
+                System.out.println("Application withdrawn successfully. You can now apply for another project.");
             }
         }
     }
@@ -383,7 +389,6 @@ public class App {
         
         BTOProject project = application.getProject();
         ApplicationStatus status = application.getApplicationStatus();
-        WithdrawalStatus withdrawalStatus = application.getWithdrawalStatus();
         
         System.out.println("\n=== Application Status ===");
         System.out.println("Project: " + project.getProjectName());
@@ -407,10 +412,124 @@ public class App {
                 System.out.println("  - You have secured a unit after a successful application and completed a flat booking with the HDB Officer");
                 break;
         }
+    }
+
+    private static void manageApplications() {
+        if (!(currentUser instanceof HDBManager)) {
+            System.out.println("This option is only available for HDB managers.");
+            return;
+        }
         
-        // Display withdrawal status if applicable
-        if (withdrawalStatus != null && withdrawalStatus != WithdrawalStatus.NONE) {
-            System.out.println("Withdrawal Status: " + withdrawalStatus);
+        HDBManager manager = (HDBManager) currentUser;
+        ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
+        Map<String, BTOApplication> allApplications = ApplicationApprovalManager.getAllApplications();
+        
+        if (allApplications.isEmpty()) {
+            System.out.println("No applications to manage.");
+            return;
+        }
+        
+        System.out.println("\n=== Manage Applications ===");
+        System.out.println("1. View Pending Applications");
+        System.out.print("Enter your choice: ");
+        
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            switch (choice) {
+                case 1:
+                    handlePendingApplications(manager, allApplications);
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void handlePendingApplications(HDBManager manager, Map<String, BTOApplication> allApplications) {
+        List<BTOApplication> pendingApplications = new ArrayList<>();
+        
+        // Filter applications for projects managed by this manager
+        for (BTOApplication application : allApplications.values()) {
+            if (application.getApplicationStatus() == ApplicationStatus.PENDING &&
+                manager.getManagedProjects().contains(application.getProject())) {
+                pendingApplications.add(application);
+            }
+        }
+        
+        if (pendingApplications.isEmpty()) {
+            System.out.println("No pending applications to review.");
+            return;
+        }
+        
+        System.out.println("\n=== Pending Applications ===");
+        for (int i = 0; i < pendingApplications.size(); i++) {
+            BTOApplication application = pendingApplications.get(i);
+            BTOProject project = application.getProject();
+            Applicant applicant = application.getApplicant();
+            
+            System.out.println((i + 1) + ". Project: " + project.getProjectName());
+            System.out.println("   Applicant: " + applicant.getName() + " (NRIC: " + applicant.getNRIC() + ")");
+            System.out.println("   Room Type: " + project.getRoomType());
+            System.out.println("   Available Units: " + project.getFlatInventory().get(project.getRoomType()));
+        }
+        
+        System.out.print("\nEnter application number to review (0 to go back): ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice == 0) {
+                return;
+            }
+            if (choice >= 1 && choice <= pendingApplications.size()) {
+                BTOApplication application = pendingApplications.get(choice - 1);
+                reviewApplication(application);
+            } else {
+                System.out.println("Invalid application number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void reviewApplication(BTOApplication application) {
+        BTOProject project = application.getProject();
+        Applicant applicant = application.getApplicant();
+        
+        System.out.println("\n=== Review Application ===");
+        System.out.println("Project: " + project.getProjectName());
+        System.out.println("Applicant: " + applicant.getName() + " (NRIC: " + applicant.getNRIC() + ")");
+        System.out.println("Room Type: " + project.getRoomType());
+        System.out.println("Available Units: " + project.getFlatInventory().get(project.getRoomType()));
+        
+        System.out.println("\n1. Approve");
+        System.out.println("2. Reject");
+        System.out.print("Enter your choice: ");
+        
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            switch (choice) {
+                case 1:
+                    // Check if there are available units
+                    int availableUnits = project.getFlatInventory().get(project.getRoomType());
+                    if (availableUnits > 0) {
+                        application.setApplicationStatus(ApplicationStatus.SUCCESSFUL);
+                        // Decrease available units
+                        project.getFlatInventory().put(project.getRoomType(), availableUnits - 1);
+                        System.out.println("Application approved successfully.");
+                    } else {
+                        System.out.println("Cannot approve application: No available units.");
+                    }
+                    break;
+                case 2:
+                    application.setApplicationStatus(ApplicationStatus.UNSUCCESSFUL);
+                    System.out.println("Application rejected.");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
         }
     }
 }
