@@ -10,19 +10,36 @@ public class App {
         
         boolean running = true;
         while (running) {
-            displayMainMenu();
-            int choice = getUserChoice();
-            
-            switch (choice) {
-                case 1:
-                    handleLogin();
-                    break;
-                case 2:
-                    running = false;
-                    System.out.println("Thank you for using the BTO Management System. Goodbye!");
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
+            if (currentUser == null) {
+                displayMainMenu();
+                int choice = getUserChoice();
+                
+                switch (choice) {
+                    case 1:
+                        handleLogin();
+                        break;
+                    case 2:
+                        running = false;
+                        System.out.println("Thank you for using the BTO Management System. Goodbye!");
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } else {
+                displayLoggedInMenu();
+                int choice = getUserChoice();
+                
+                switch (choice) {
+                    case 1:
+                        handleChangePassword();
+                        break;
+                    case 2:
+                        currentUser = null;
+                        System.out.println("Logged out successfully.");
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
             }
         }
         
@@ -33,6 +50,13 @@ public class App {
         System.out.println("\n=== BTO Management System ===");
         System.out.println("1. Login");
         System.out.println("2. Exit");
+        System.out.print("Enter your choice: ");
+    }
+
+    private static void displayLoggedInMenu() {
+        System.out.println("\n=== Welcome, " + currentUser.getName() + " ===");
+        System.out.println("1. Change Password");
+        System.out.println("2. Logout");
         System.out.print("Enter your choice: ");
     }
 
@@ -48,14 +72,42 @@ public class App {
         System.out.print("Enter NRIC: ");
         String nric = scanner.nextLine();
         
+        // Validate NRIC format
+        if (!nric.matches("^[ST]\\d{7}[A-Z]$")) {
+            System.out.println("Invalid NRIC format! It must start with S or T, followed by 7 digits and an uppercase letter.");
+            return;
+        }
+        
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
         if (ApplicantManager.authenticateApplicant(nric, password)) {
             currentUser = ApplicantManager.getApplicant(nric);
             System.out.println("Welcome, " + currentUser.getName() + "!");
-            // Here you can add a call to a method that handles the logged-in user menu
-            // For example: handleLoggedInMenu();
+        }
+    }
+
+    private static void handleChangePassword() {
+        System.out.print("Enter current password: ");
+        String currentPassword = scanner.nextLine();
+        
+        System.out.print("Enter new password: ");
+        String newPassword = scanner.nextLine();
+        
+        System.out.print("Confirm new password: ");
+        String confirmPassword = scanner.nextLine();
+        
+        if (!newPassword.equals(confirmPassword)) {
+            System.out.println("New passwords do not match!");
+            return;
+        }
+        
+        if (currentUser.getSingpassAccount().authenticate(currentPassword)) {
+            ApplicantManager.updateApplicantPassword(currentUser.getNRIC(), newPassword);
+            System.out.println("Password changed successfully. Please login again.");
+            currentUser = null;
+        } else {
+            System.out.println("Current password is incorrect!");
         }
     }
 }

@@ -14,4 +14,8 @@ public class SingpassAccount {
     public void resetPassword(String newPassword) {
         this.password = newPassword;
     }
+
+    public String getPassword() {
+        return this.password;
+    }
 }

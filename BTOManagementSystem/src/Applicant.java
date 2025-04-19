@@ -1,8 +1,8 @@
 public class Applicant extends User {
     private BTOApplication application;
 
-    public Applicant(String name, String nric, int age, MaritalStatus maritalStatus) {
-        super(name, nric, age, maritalStatus);
+    public Applicant(String name, String nric, int age, MaritalStatus maritalStatus, String password) {
+        super(name, nric, age, maritalStatus, password);
         this.application = null; // No application at start
     }
 

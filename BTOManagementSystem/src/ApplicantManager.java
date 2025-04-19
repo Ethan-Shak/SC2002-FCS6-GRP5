@@ -1,11 +1,14 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ApplicantManager {
     private static Map<String, Applicant> applicants = new HashMap<>(); // NRIC as key
+    private static final String CSV_FILE = "ApplicantList.csv";
 
     public static void loadApplicantsFromCSV(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -15,13 +18,14 @@ public class ApplicantManager {
             
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(",");
-                if (data.length >= 4) { // We only need name, nric, age, maritalstatus (password is handled by SingpassAccount)
+                if (data.length >= 5) { // We need name, nric, age, maritalstatus, and password
                     String name = data[0].trim();
                     String nric = data[1].trim();
                     int age = Integer.parseInt(data[2].trim());
                     MaritalStatus maritalStatus = MaritalStatus.valueOf(data[3].trim().toUpperCase());
+                    String password = data[4].trim();
 
-                    Applicant applicant = new Applicant(name, nric, age, maritalStatus);
+                    Applicant applicant = new Applicant(name, nric, age, maritalStatus, password);
                     applicants.put(nric, applicant);
                 }
             }
@@ -46,11 +50,39 @@ public class ApplicantManager {
             return true;
         }
 
-        System.out.println("Login failed: Invalid credentials");
+        System.out.println("Login failed: Wrong password");
         return false;
     }
 
     public static Applicant getApplicant(String nric) {
         return applicants.get(nric);
+    }
+
+    public static void saveApplicantsToCSV() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
+            // Write header
+            writer.println("Name,NRIC,Age,MaritalStatus,Password");
+            
+            // Write data for each applicant
+            for (Applicant applicant : applicants.values()) {
+                writer.printf("%s,%s,%d,%s,%s%n",
+                    applicant.getName(),
+                    applicant.getNRIC(),
+                    applicant.getAge(),
+                    applicant.getMaritalStatus(),
+                    applicant.getSingpassAccount().getPassword());
+            }
+            System.out.println("Successfully saved applicants to CSV file.");
+        } catch (IOException e) {
+            System.out.println("Error saving to CSV file: " + e.getMessage());
+        }
+    }
+
+    public static void updateApplicantPassword(String nric, String newPassword) {
+        Applicant applicant = applicants.get(nric);
+        if (applicant != null) {
+            applicant.getSingpassAccount().resetPassword(newPassword);
+            saveApplicantsToCSV();
+        }
     }
 } 
