@@ -3,12 +3,21 @@ public class Flat {
     private RoomType type; 
     private boolean isAvailable; 
     private Applicant assignedApplicant; 
+    private BTOProject project;
 
     public Flat(int flatID, RoomType type) {
         this.flatID = flatID;
         this.type = type;
         this.isAvailable = true;
         this.assignedApplicant = null;
+    }
+
+    public void setProject(BTOProject project) {
+        this.project = project;
+    }
+
+    public BTOProject getProject() {
+        return project;
     }
 
     public void bookFlat(Applicant applicant) {

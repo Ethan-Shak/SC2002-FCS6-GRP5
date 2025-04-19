@@ -80,4 +80,30 @@ public class FlatBookingManager implements IFlatBookingManager {
     public static Map<String, Flat> getAllBookings() {
         return new HashMap<>(bookings);
     }
+
+    // Method to release a flat when an applicant withdraws their application
+    public static boolean releaseFlat(String applicantNRIC) {
+        Flat bookedFlat = bookings.get(applicantNRIC);
+        if (bookedFlat == null) {
+            return false;
+        }
+
+        // Get the project and room type before releasing the flat
+        BTOProject project = bookedFlat.getProject();
+        RoomType roomType = bookedFlat.getType();
+        
+        // Release the flat
+        bookedFlat.releaseFlat();
+        
+        // Remove the booking
+        bookings.remove(applicantNRIC);
+        
+        // Update flat inventory in the project
+        Map<RoomType, Integer> flatInventory = project.getFlatInventory();
+        int currentCount = flatInventory.getOrDefault(roomType, 0);
+        flatInventory.put(roomType, currentCount + 1);
+        project.setFlatInventory(flatInventory);
+        
+        return true;
+    }
 } 

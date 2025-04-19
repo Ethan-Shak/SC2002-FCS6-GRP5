@@ -35,7 +35,9 @@ public class BTOProject {
             int count = entry.getValue();
             
             for (int i = 0; i < count; i++) {
-                flats.add(new Flat(flatID++, type));
+                Flat flat = new Flat(flatID++, type);
+                flat.setProject(this);
+                flats.add(flat);
             }
         }
     }
@@ -126,7 +128,9 @@ public class BTOProject {
             int count = entry.getValue();
             
             for (int i = 0; i < count; i++) {
-                flats.add(new Flat(flatID++, roomType));
+                Flat flat = new Flat(flatID++, roomType);
+                flat.setProject(this);
+                flats.add(flat);
             }
         }
     }
