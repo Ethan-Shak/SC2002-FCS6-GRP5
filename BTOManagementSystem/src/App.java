@@ -71,8 +71,9 @@ public class App {
             System.out.println("2. Apply for Project");
             System.out.println("3. Withdraw Application");
             System.out.println("4. View Application Status");
-            System.out.println("5. Change Password");
-            System.out.println("6. Logout");
+            System.out.println("5. Manage Enquiries");
+            System.out.println("6. Change Password");
+            System.out.println("7. Logout");
         }
         
         System.out.print("Enter your choice: ");
@@ -320,9 +321,12 @@ public class App {
                     viewApplicationStatus();
                     break;
                 case 5:
-                    handleChangePassword();
+                    manageEnquiries();
                     break;
                 case 6:
+                    handleChangePassword();
+                    break;
+                case 7:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -725,6 +729,196 @@ public class App {
                 }
             } else {
                 System.out.println("Invalid flat number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void manageEnquiries() {
+        if (!(currentUser instanceof Applicant)) {
+            System.out.println("This option is only available for applicants.");
+            return;
+        }
+        
+        Applicant applicant = (Applicant) currentUser;
+        
+        boolean running = true;
+        while (running) {
+            System.out.println("\n=== Manage Enquiries ===");
+            System.out.println("1. Submit New Enquiry");
+            System.out.println("2. View My Enquiries");
+            System.out.println("3. Edit Enquiry");
+            System.out.println("4. Delete Enquiry");
+            System.out.println("5. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                
+                switch (choice) {
+                    case 1:
+                        submitEnquiry(applicant);
+                        break;
+                    case 2:
+                        viewEnquiries(applicant);
+                        break;
+                    case 3:
+                        editEnquiry(applicant);
+                        break;
+                    case 4:
+                        deleteEnquiry(applicant);
+                        break;
+                    case 5:
+                        running = false;
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+    
+    private static void submitEnquiry(Applicant applicant) {
+        // Display available projects
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        List<BTOProject> eligibleProjects = new ArrayList<>();
+        
+        System.out.println("\n=== Available Projects ===");
+        int index = 1;
+        for (BTOProject project : projects) {
+            if (project.checkVisibility(applicant)) {
+                System.out.println(index + ". " + project.getProjectName() + 
+                    " (" + project.getNeighbourhood() + ")");
+                eligibleProjects.add(project);
+                index++;
+            }
+        }
+        
+        if (eligibleProjects.isEmpty()) {
+            System.out.println("No eligible projects available for you.");
+            return;
+        }
+        
+        System.out.print("Enter project number to submit enquiry: ");
+        try {
+            int projectChoice = Integer.parseInt(scanner.nextLine());
+            if (projectChoice >= 1 && projectChoice <= eligibleProjects.size()) {
+                BTOProject selectedProject = eligibleProjects.get(projectChoice - 1);
+                
+                System.out.print("Enter your enquiry: ");
+                String content = scanner.nextLine();
+                
+                if (content.trim().isEmpty()) {
+                    System.out.println("Enquiry cannot be empty.");
+                    return;
+                }
+                
+                Enquiry enquiry = EnquiryManager.submitEnquiry(applicant, selectedProject, content);
+                System.out.println("Enquiry submitted successfully with ID: " + enquiry.getEnquiryID());
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void viewEnquiries(Applicant applicant) {
+        List<Enquiry> enquiries = EnquiryManager.getEnquiriesForApplicant(applicant);
+        
+        if (enquiries.isEmpty()) {
+            System.out.println("You have not submitted any enquiries.");
+            return;
+        }
+        
+        System.out.println("\n=== Your Enquiries ===");
+        for (Enquiry enquiry : enquiries) {
+            System.out.println("\n" + enquiry.toString());
+        }
+    }
+    
+    private static void editEnquiry(Applicant applicant) {
+        List<Enquiry> enquiries = EnquiryManager.getEnquiriesForApplicant(applicant);
+        
+        if (enquiries.isEmpty()) {
+            System.out.println("You have not submitted any enquiries.");
+            return;
+        }
+        
+        System.out.println("\n=== Your Enquiries ===");
+        for (Enquiry enquiry : enquiries) {
+            System.out.println("\n" + enquiry.toString());
+        }
+        
+        System.out.print("\nEnter enquiry ID to edit (0 to cancel): ");
+        try {
+            int enquiryID = Integer.parseInt(scanner.nextLine());
+            if (enquiryID == 0) {
+                return;
+            }
+            
+            Enquiry enquiry = EnquiryManager.getEnquiry(enquiryID);
+            if (enquiry == null || !enquiry.getApplicant().equals(applicant)) {
+                System.out.println("Invalid enquiry ID or you don't own this enquiry.");
+                return;
+            }
+            
+            System.out.print("Enter new enquiry content: ");
+            String newContent = scanner.nextLine();
+            
+            if (newContent.trim().isEmpty()) {
+                System.out.println("Enquiry cannot be empty.");
+                return;
+            }
+            
+            if (EnquiryManager.updateEnquiry(enquiryID, newContent)) {
+                System.out.println("Enquiry updated successfully.");
+            } else {
+                System.out.println("Failed to update enquiry.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void deleteEnquiry(Applicant applicant) {
+        List<Enquiry> enquiries = EnquiryManager.getEnquiriesForApplicant(applicant);
+        
+        if (enquiries.isEmpty()) {
+            System.out.println("You have not submitted any enquiries.");
+            return;
+        }
+        
+        System.out.println("\n=== Your Enquiries ===");
+        for (Enquiry enquiry : enquiries) {
+            System.out.println("\n" + enquiry.toString());
+        }
+        
+        System.out.print("\nEnter enquiry ID to delete (0 to cancel): ");
+        try {
+            int enquiryID = Integer.parseInt(scanner.nextLine());
+            if (enquiryID == 0) {
+                return;
+            }
+            
+            Enquiry enquiry = EnquiryManager.getEnquiry(enquiryID);
+            if (enquiry == null || !enquiry.getApplicant().equals(applicant)) {
+                System.out.println("Invalid enquiry ID or you don't own this enquiry.");
+                return;
+            }
+            
+            System.out.print("Are you sure you want to delete this enquiry? (y/n): ");
+            String confirm = scanner.nextLine().toLowerCase();
+            
+            if (confirm.equals("y") || confirm.equals("yes")) {
+                if (EnquiryManager.deleteEnquiry(enquiryID)) {
+                    System.out.println("Enquiry deleted successfully.");
+                } else {
+                    System.out.println("Failed to delete enquiry.");
+                }
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
