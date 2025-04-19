@@ -421,7 +421,6 @@ public class App {
         }
         
         HDBManager manager = (HDBManager) currentUser;
-        ApplicationApprovalManager approvalManager = new ApplicationApprovalManager();
         Map<String, BTOApplication> allApplications = ApplicationApprovalManager.getAllApplications();
         
         if (allApplications.isEmpty()) {
