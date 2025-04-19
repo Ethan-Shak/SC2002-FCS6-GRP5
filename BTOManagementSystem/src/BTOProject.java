@@ -1,4 +1,4 @@
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,40 +8,49 @@ public class BTOProject {
     private String projectName;
     private String neighbourhood;
     private RoomType roomType;
-    private LocalDateTime applicationOpeningDate;
-    private LocalDateTime applicationClosingDate;
+    private LocalDate applicationOpeningDate;
+    private LocalDate applicationClosingDate;
     private boolean isVisible;
     private HDBManager manager;
-    private List<HDBOfficer> officers; //
+    private List<HDBOfficer> officers; 
     private List<MaritalStatus> eligibleGroups;
     private Map<RoomType, Integer> flatInventory;
     private List<Flat> flats;
 
-    public BTOProject(String projectName, String neighbourhood, RoomType roomType, HDBManager manager) {
-        this.projectName = projectName;
-        this.neighbourhood = neighbourhood;
-        this.roomType = roomType;
-        this.manager = manager;
-        this.flats = new ArrayList<>();
-        this.officers = new ArrayList<>();
-        this.eligibleGroups = new ArrayList<>();
-        this.flatInventory = new HashMap<>();
-        this.isVisible = true; // True by default
-        
-        // Initialize flats based on inventory
-        int flatID = 1;
-        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
-            RoomType type = entry.getKey();
-            int count = entry.getValue();
-            
-            for (int i = 0; i < count; i++) {
-                Flat flat = new Flat(flatID++, type);
-                flat.setProject(this);
-                flats.add(flat);
-            }
-        }
+public BTOProject(String projectName, String neighbourhood, RoomType roomType, HDBManager manager, 
+                  LocalDate applicationOpeningDate, LocalDate applicationClosingDate) {
+    this.projectName = projectName;
+    this.neighbourhood = neighbourhood;
+    this.roomType = roomType;
+    this.manager = manager;
+    this.applicationOpeningDate = applicationOpeningDate;
+    this.applicationClosingDate = applicationClosingDate;
+    this.flats = new ArrayList<>();
+    this.officers = new ArrayList<>();
+    this.eligibleGroups = new ArrayList<>();
+    this.flatInventory = new HashMap<>();
+    this.isVisible = true; // True by default
+}
+
+    // Initialize flats based on inventory
+    public void setFlatInventory(Map<RoomType, Integer> flatInventory) {  
+        this.flatInventory = flatInventory;  
+        this.flats.clear();  
+        int flatID = 1;  
+
+        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {  
+            RoomType roomType = entry.getKey();  
+            int count = entry.getValue();  
+
+            for (int i = 0; i < count; i++) {  
+                Flat flat = new Flat(flatID++, roomType); // Price removed
+                flat.setProject(this);  
+                flats.add(flat);  
+            }  
+        }  
     }
 
+    // Get available flats
     public List<Flat> getAvailableFlats() {
         List<Flat> availableFlats = new ArrayList<>();
         for (Flat flat : flats) {
@@ -52,35 +61,34 @@ public class BTOProject {
         return availableFlats;
     }
 
-    public boolean addOfficer(HDBOfficer offr) { // returns false if add fails
-        if (officers.size() >= 10) { // check if project already has 10.
+    // Add officer to project
+    public boolean addOfficer(HDBOfficer officer) {
+        if (officers.size() >= 10) { // Maximum 10 officers allowed
             return false;
         }
-        officers.add(offr);
+        officers.add(officer);
         return true;
     }
 
-    public void removeOfficer(HDBOfficer offr) {
-        officers.remove(offr);
+    // Remove officer from project
+    public void removeOfficer(HDBOfficer officer) {
+        officers.remove(officer);
     }
 
+    // Check if project is visible and eligible for applicant
     public boolean checkVisibility(Applicant applicant) {
-        // If project is not visible, return false
         if (!isVisible) {
             return false;
         }
         
-        // Check if the applicant's marital status is in the eligible groups
         if (!eligibleGroups.contains(applicant.getMaritalStatus())) {
             return false;
         }
         
-        // Singles, 35 years old and above, can ONLY apply for 2-Room
         if (applicant.getMaritalStatus() == MaritalStatus.SINGLE) {
             return applicant.getAge() >= 35 && flatInventory.containsKey(RoomType.TWO_ROOM);
         }
         
-        // Married, 21 years old and above, can apply for any flat types
         if (applicant.getMaritalStatus() == MaritalStatus.MARRIED) {
             return applicant.getAge() >= 21 && !flatInventory.isEmpty();
         }
@@ -88,8 +96,13 @@ public class BTOProject {
         return false;
     }
 
-    public int getNumberOfOfficers() {
-        return officers.size(); 
+    // Get list of officer names for CSV saving
+    public List<String> getAssignedOfficerNames() {
+        List<String> names = new ArrayList<>();
+        for (HDBOfficer officer : officers) {
+            names.add(officer.getName());
+        }
+        return names;
     }
 
     // Default getters
@@ -100,38 +113,23 @@ public class BTOProject {
     public List<Flat> getFlats() { return flats; }
     public List<HDBOfficer> getOfficers() { return officers; }
     public boolean getVisibility() { return isVisible; }
-    public LocalDateTime getApplicationOpeningDate() { return applicationOpeningDate; }
-    public LocalDateTime getApplicationClosingDate() { return applicationClosingDate; }
+    public LocalDate getApplicationOpeningDate() { return applicationOpeningDate; }
+    public LocalDate getApplicationClosingDate() { return applicationClosingDate; }
     public List<MaritalStatus> getEligibleGroups() { return eligibleGroups; }
     public Map<RoomType, Integer> getFlatInventory() { return flatInventory; }
-
+    public int getNumberOfOfficers() {
+        return officers.size();
+    }
+    
     // Default setters
-    public void setProjectName(String projectName) { this.projectName =  projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
     public void setNeighbourhood(String neighbourhood) { this.neighbourhood = neighbourhood; }
     public void setRoomType(RoomType roomType) { this.roomType = roomType; }
     public void setManager(HDBManager manager) { this.manager = manager; }
     public void setFlats(List<Flat> flats) { this.flats = flats; }
     public void setOfficers(List<HDBOfficer> officers) { this.officers = officers; }
     public void setVisibility(boolean isVisible) { this.isVisible = isVisible; }
-    public void setApplicationOpeningDate(LocalDateTime applicationOpeningDate) { this.applicationOpeningDate = applicationOpeningDate; }
-    public void setApplicationClosingDate(LocalDateTime applicationClosingDate) { this.applicationClosingDate = applicationClosingDate; }
+    public void setApplicationOpeningDate(LocalDate applicationOpeningDate) { this.applicationOpeningDate = applicationOpeningDate; }
+    public void setApplicationClosingDate(LocalDate applicationClosingDate) { this.applicationClosingDate = applicationClosingDate; }
     public void setEligibleGroups(List<MaritalStatus> eligibleGroups) { this.eligibleGroups = eligibleGroups; }
-    public void setFlatInventory(Map<RoomType, Integer> flatInventory) { 
-        this.flatInventory = flatInventory;
-        
-        // Initialize flats based on inventory
-        this.flats.clear();
-        int flatID = 1;
-        
-        for (Map.Entry<RoomType, Integer> entry : flatInventory.entrySet()) {
-            RoomType roomType = entry.getKey();
-            int count = entry.getValue();
-            
-            for (int i = 0; i < count; i++) {
-                Flat flat = new Flat(flatID++, roomType);
-                flat.setProject(this);
-                flats.add(flat);
-            }
-        }
-    }
 }

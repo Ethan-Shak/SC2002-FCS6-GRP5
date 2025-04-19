@@ -1,178 +1,216 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ProjectManager {
-    private static Map<String, BTOProject> projects = new HashMap<>(); // Project name as key
+    private static Map<String, BTOProject> projects = new HashMap<>();
     private static final String CSV_FILE = "ProjectList.csv";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("d/M/yyyy");
 
+    // Load projects from CSV file
     public static void loadProjectsFromCSV(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
-            // Skip header line
-            br.readLine();
-            
+            br.readLine(); // Skip header line
+
             while ((line = br.readLine()) != null) {
-                // Use a more robust CSV parsing approach
                 List<String> data = parseCSVLine(line);
-                if (data.size() >= 13) { // We need all the project details
+                if (data.size() >= 13) {
                     String projectName = data.get(0).trim();
-                    String neighborhood = data.get(1).trim();
-                    
-                    // Parse room types correctly
+                    String neighbourhood = data.get(1).trim();
+
                     RoomType type1 = parseRoomType(data.get(2).trim());
                     int unitsType1 = Integer.parseInt(data.get(3).trim());
-                    double priceType1 = Double.parseDouble(data.get(4).trim());
                     RoomType type2 = parseRoomType(data.get(5).trim());
                     int unitsType2 = Integer.parseInt(data.get(6).trim());
-                    double priceType2 = Double.parseDouble(data.get(7).trim());
-                    
+
                     LocalDate openingDate = LocalDate.parse(data.get(8).trim(), DATE_FORMATTER);
                     LocalDate closingDate = LocalDate.parse(data.get(9).trim(), DATE_FORMATTER);
                     String managerName = data.get(10).trim();
                     int officerSlots = Integer.parseInt(data.get(11).trim());
                     String officersStr = data.get(12).trim();
-                    
-                    // Debug output commented out
-                    // System.out.println("Raw officer names from CSV: '" + officersStr + "'");
-                    
-                    // Parse officer names, handling quoted values
-                    String[] officerNames;
-                    if (officersStr.startsWith("\"") && officersStr.endsWith("\"")) {
-                        // Remove the outer quotes and split by comma
-                        officersStr = officersStr.substring(1, officersStr.length() - 1);
-                    }
-                    officerNames = officersStr.split(",");
-                    
-                    // Debug output commented out
-                    // System.out.println("After processing: '" + officersStr + "'");
-                    // System.out.println("Split into: " + officerNames.length + " names");
-                    // for (int i = 0; i < officerNames.length; i++) {
-                    //     System.out.println("Officer name " + i + ": '" + officerNames[i] + "'");
-                    // }
-                    
-                    // Create the project
+
+                    String[] officerNames = officersStr.split(",");
+
                     HDBManager manager = ManagerController.getManagerByName(managerName);
-                    BTOProject project = new BTOProject(projectName, neighborhood, type1, manager);
-                    
-                    // Set additional project details
-                    project.setApplicationOpeningDate(openingDate.atStartOfDay());
-                    project.setApplicationClosingDate(closingDate.atStartOfDay());
-                    
-                    // Add flat inventory
+                    BTOProject project = new BTOProject(projectName, neighbourhood, type1, manager, openingDate, closingDate); // Fixed Constructor Call
+
                     Map<RoomType, Integer> flatInventory = new HashMap<>();
                     flatInventory.put(type1, unitsType1);
                     flatInventory.put(type2, unitsType2);
                     project.setFlatInventory(flatInventory);
-                    
-                    // Add eligible groups based on room types
+
                     List<MaritalStatus> eligibleGroups = new ArrayList<>();
                     if (type1 == RoomType.TWO_ROOM) {
                         eligibleGroups.add(MaritalStatus.SINGLE);
                     }
                     eligibleGroups.add(MaritalStatus.MARRIED);
                     project.setEligibleGroups(eligibleGroups);
-                    
-                    // Assign manager to project
+
                     if (manager != null) {
                         manager.addManagedProject(project);
                     }
-                    
-                    // Assign officers to project
+
                     for (String officerName : officerNames) {
                         officerName = officerName.trim();
                         if (!officerName.isEmpty()) {
                             HDBOfficer officer = OfficerController.getOfficerByName(officerName);
                             if (officer != null) {
-                                boolean added = project.addOfficer(officer);
-                                if (added) {
-                                    officer.registerForProject(project);
-                                    // Debug output commented out
-                                    // System.out.println("Successfully assigned officer " + officerName + " to project " + projectName);
-                                } else {
-                                    // Debug output commented out
-                                    // System.out.println("Failed to add officer " + officerName + " to project " + projectName + " (project might have reached maximum officers)");
-                                }
-                            } else {
-                                // Debug output commented out
-                                // System.out.println("Warning: Officer not found: " + officerName);
+                                project.addOfficer(officer);
+                                officer.registerForProject(project);
                             }
                         }
                     }
-                    
-                    // Store the project
+
                     projects.put(projectName, project);
                 }
             }
             System.out.println("Successfully loaded projects from CSV file.");
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             System.out.println("Error reading CSV file: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error parsing data: " + e.getMessage());
         }
     }
-    
-    // Helper method to parse CSV line with proper handling of quoted values
+
+    // Save all projects into CSV (Overwrites existing file)
+    public static void saveProjectsToCSV() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
+            writer.println("Project Name,Neighborhood,Room Type,Units Type 1,Units Type 2,Opening Date,Closing Date,Manager Name,Officer Slots,Officers");
+
+            for (BTOProject project : projects.values()) {
+                String officersStr = String.join(",", project.getAssignedOfficerNames());
+
+                writer.printf("%s,%s,%s,%d,%d,%s,%s,%s,%d,\"%s\"\n",
+                        project.getProjectName(), project.getNeighbourhood(), project.getRoomType(),
+                        project.getFlatInventory().getOrDefault(RoomType.TWO_ROOM, 0),
+                        project.getFlatInventory().getOrDefault(RoomType.THREE_ROOM, 0),
+                        project.getApplicationOpeningDate(),
+                        project.getApplicationClosingDate(),
+                        project.getManager().getName(), project.getNumberOfOfficers(), officersStr);
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving projects to CSV: " + e.getMessage());
+        }
+    }
+
+    // View all projects
+    public static List<BTOProject> getAllProjects() {
+        return new ArrayList<>(projects.values());
+    }
+
+    // Filter projects by manager
+    public static List<BTOProject> getProjectsByManager(HDBManager manager) {
+        List<BTOProject> filteredProjects = new ArrayList<>();
+        for (BTOProject project : projects.values()) {
+            if (project.getManager().equals(manager)) {
+                filteredProjects.add(project);
+            }
+        }
+        return filteredProjects;
+    }
+
+    // Add a new project
+    public static boolean createProject(String projectName, String neighborhood, RoomType roomType,
+                                        HDBManager manager, LocalDate openingDate, LocalDate closingDate) {
+        if (projects.containsKey(projectName)) {
+            System.out.println("Error: A project with this name already exists.");
+            return false;
+        }
+
+        BTOProject newProject = new BTOProject(projectName, neighborhood, roomType, manager, openingDate, closingDate);
+
+        projects.put(projectName, newProject);
+        manager.addManagedProject(newProject);
+        saveProjectsToCSV();
+        System.out.println("Project successfully created: " + projectName);
+        return true;
+    }
+
+    // Edit an existing project
+    public static boolean editProject(String projectName, String newNeighborhood, RoomType newRoomType,
+                                  LocalDate newOpeningDate, LocalDate newClosingDate) {
+    BTOProject project = projects.get(projectName);
+    if (project == null) {
+        System.out.println("Error: Project not found.");
+        return false;
+    }
+
+    if (newNeighborhood != null) project.setNeighbourhood(newNeighborhood);
+    if (newRoomType != null) project.setRoomType(newRoomType);
+    if (newOpeningDate != null) project.setApplicationOpeningDate(newOpeningDate);
+    if (newClosingDate != null) project.setApplicationClosingDate(newClosingDate);
+
+    saveProjectsToCSV();
+    System.out.println("Project successfully updated: " + projectName);
+    return true;
+    }
+
+    // Delete a project
+    public static boolean deleteProject(String projectName) {
+        BTOProject project = projects.get(projectName);
+        if (project == null) {
+            System.out.println("Error: Project not found.");
+            return false;
+        }
+
+        projects.remove(projectName);
+        project.getManager().removeManagedProject(project);
+        saveProjectsToCSV();
+        System.out.println("Project successfully deleted: " + projectName);
+        return true;
+    }
+
+    // Helper method: prevent managers from handling overlapping projects
+    private static boolean managerHasConflictingProject(HDBManager manager, LocalDate newOpeningDate, LocalDate newClosingDate) {
+        for (BTOProject project : manager.getManagedProjects()) {
+            LocalDate existingOpening = project.getApplicationOpeningDate();
+            LocalDate existingClosing = project.getApplicationClosingDate();
+            if (!(newClosingDate.isBefore(existingOpening) || newOpeningDate.isAfter(existingClosing))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Parse a CSV line, handling quoted values properly
     private static List<String> parseCSVLine(String line) {
         List<String> result = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
-        
+
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-            
+
             if (c == '\"') {
                 if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '\"') {
-                    // Handle escaped quotes (double quotes)
                     current.append('\"');
-                    i++; // Skip the next quote
+                    i++;
                 } else {
-                    // Toggle quote state
                     inQuotes = !inQuotes;
                 }
             } else if (c == ',' && !inQuotes) {
-                // End of field
                 result.add(current.toString());
                 current = new StringBuilder();
             } else {
                 current.append(c);
             }
         }
-        
-        // Add the last field
+
         result.add(current.toString());
-        
         return result;
     }
-    
+
     private static RoomType parseRoomType(String roomTypeStr) {
         try {
-            // Remove any spaces and convert to uppercase
-            String normalized = roomTypeStr.trim().replace(" ", "").toUpperCase();
-            
-            // Handle different formats
+            String normalized = roomTypeStr.trim().toUpperCase().replace("-", "_");
+    
             switch (normalized) {
-                case "2-ROOM":
-                case "2ROOM":
                 case "2_ROOM":
                     return RoomType.TWO_ROOM;
-                case "3-ROOM":
-                case "3ROOM":
                 case "3_ROOM":
                     return RoomType.THREE_ROOM;
-                case "4-ROOM":
-                case "4ROOM":
                 case "4_ROOM":
                     return RoomType.FOUR_ROOM;
-                case "5-ROOM":
-                case "5ROOM":
                 case "5_ROOM":
                     return RoomType.FIVE_ROOM;
                 default:
@@ -182,12 +220,4 @@ public class ProjectManager {
             throw new IllegalArgumentException("Error parsing room type: " + roomTypeStr, e);
         }
     }
-
-    public static BTOProject getProject(String projectName) {
-        return projects.get(projectName);
-    }
-
-    public static List<BTOProject> getAllProjects() {
-        return new ArrayList<>(projects.values());
-    }
-} 
+}

@@ -1,6 +1,7 @@
 public class Flat {
     private int flatID;
-    private RoomType type; 
+    private RoomType type;
+    private double price;
     private boolean isAvailable; 
     private Applicant assignedApplicant; 
     private BTOProject project;
@@ -54,4 +55,7 @@ public class Flat {
     public boolean isAvailable() {
         return isAvailable;
     }
+    
+    public RoomType getRoomType() { return type; }
+    public double getPrice() {return price;}
 }

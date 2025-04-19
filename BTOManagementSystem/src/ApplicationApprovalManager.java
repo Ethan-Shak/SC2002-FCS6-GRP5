@@ -1,4 +1,4 @@
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         }
         
         // Check if application period is open
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate now = LocalDate.now();
         if (now.isBefore(project.getApplicationOpeningDate()) || now.isAfter(project.getApplicationClosingDate())) {
             System.out.println("Error: Application period is not open for this project.");
             return false;

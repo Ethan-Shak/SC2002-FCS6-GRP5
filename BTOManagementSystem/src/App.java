@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +54,16 @@ public class App {
     private static void displayLoggedInMenu() {
         System.out.println("\n=== Welcome, " + currentUser.getName() + " ===");
         System.out.println("1. View Projects");
-        
+    
         if (currentUser instanceof HDBManager) {
-            System.out.println("2. Toggle Project Visibility");
-            System.out.println("3. Manage Applications");
-            System.out.println("4. Change Password");
-            System.out.println("5. Logout");
+            System.out.println("2. Add New Project");
+            System.out.println("3. Modify Existing Project");
+            System.out.println("4. Remove Project");
+            System.out.println("5. Toggle Project Visibility");
+            System.out.println("6. Manage Applications");
+            System.out.println("7. Change Password");
+            System.out.println("8. Logout");
+
         } else if (currentUser instanceof HDBOfficer) {
             // HDB Officer menu (includes both applicant and officer options)
             System.out.println("2. Apply for Project");
@@ -170,34 +176,57 @@ public class App {
     }
 
     private static void displayProjects() {
-        List<BTOProject> projects = ProjectManager.getAllProjects();
-        
-        if (projects.isEmpty()) {
-            System.out.println("No projects available.");
-            return;
-        }
-        
-        System.out.println("\n=== Available Projects ===");
-        
+        List<BTOProject> projects;
+    
         if (currentUser instanceof HDBManager) {
-            // Managers can see all projects regardless of visibility
+            projects = ProjectManager.getAllProjects();
+            
+            if (projects.isEmpty()) {
+                System.out.println("No projects assigned to you.");
+                return;
+            }
+
+            System.out.println("\n=== All Available Projects ===");
             for (BTOProject project : projects) {
                 displayProjectDetails(project, true);
             }
+    
         } else if (currentUser instanceof Applicant) {
-            // Applicants can only see projects visible to their user group
+            // Get all projects visible to the applicant
+            projects = ProjectManager.getAllProjects();
+            System.out.println("\n=== Available Projects for You ===");
+    
+            boolean hasVisibleProjects = false;
             for (BTOProject project : projects) {
-                if (project.checkVisibility((Applicant)currentUser)) {
+                if (project.checkVisibility((Applicant) currentUser)) {
                     displayProjectDetails(project, false);
+                    hasVisibleProjects = true;
                 }
             }
+    
+            if (!hasVisibleProjects) {
+                System.out.println("No projects available for your eligibility.");
+            }
+    
         } else if (currentUser instanceof HDBOfficer) {
-            // Officers can see all projects they are assigned to
+            // Get all projects where the officer is assigned
+            projects = ProjectManager.getAllProjects();
+            System.out.println("\n=== Your Assigned Projects ===");
+    
+            boolean hasAssignedProjects = false;
             for (BTOProject project : projects) {
                 if (project.getOfficers().contains(currentUser)) {
                     displayProjectDetails(project, false);
+                    hasAssignedProjects = true;
                 }
             }
+    
+            if (!hasAssignedProjects) {
+                System.out.println("No projects assigned to you.");
+            }
+    
+        } else {
+            System.out.println("Invalid user type. Unable to display projects.");
         }
     }
     
@@ -219,14 +248,139 @@ public class App {
         }
         
         System.out.println("Application Period: " + 
-            project.getApplicationOpeningDate().toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + 
+            project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + 
             " to " + 
-            project.getApplicationClosingDate().toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         
         System.out.println("Manager: " + (project.getManager() != null ? project.getManager().getName() : "Not assigned"));
         System.out.println("Officers: " + project.getNumberOfOfficers());
     }
+
+    private static void handleViewProjects() {
+        Scanner scanner = new Scanner(System.in);
+        
+        while (true) {
+            System.out.println("\n=== View Projects ===");
+            System.out.println("1. View All Projects");
+            System.out.println("2. View My Projects");
+            System.out.println("3. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                switch (choice) {
+                    case 1:
+                        displayProjects();
+                        break;
+                    case 2:
+                        displayManagerProjects();
+                        break;
+                    case 3:
+                        return;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private static void displayManagerProjects() {
+        List<BTOProject> projects = ProjectManager.getProjectsByManager((HDBManager) currentUser);
     
+        if (projects.isEmpty()) {
+            System.out.println("You have not any projects.");
+            return;
+        }
+    
+        System.out.println("\n=== Your Created Projects ===");
+        for (BTOProject project : projects) {
+            displayProjectDetails(project, true);
+        }
+    }
+
+    private static void handleAddProject() {
+        Scanner scanner = new Scanner(System.in);
+    
+        System.out.println("\n=== Add New Project ===");
+        System.out.print("Enter project name: ");
+        String projectName = scanner.nextLine();
+    
+        System.out.print("Enter neighborhood: ");
+        String neighborhood = scanner.nextLine();
+    
+        System.out.print("Enter room type (e.g., TWO_ROOM, THREE_ROOM): ");
+        RoomType roomType = RoomType.valueOf(scanner.nextLine().toUpperCase());
+    
+        System.out.print("Enter application opening date (dd/MM/yyyy): ");
+        LocalDate openingDate = LocalDate.parse(scanner.nextLine(), DateTimeFormatter.ofPattern("d/M/yyyy"));
+    
+        System.out.print("Enter application closing date (dd/MM/yyyy): ");
+        LocalDate closingDate = LocalDate.parse(scanner.nextLine(), DateTimeFormatter.ofPattern("d/M/yyyy"));
+    
+        boolean success = ProjectManager.createProject(projectName, neighborhood, roomType, (HDBManager) currentUser, openingDate, closingDate);
+    
+        if (success) {
+            System.out.println("New project added successfully!");
+        } else {
+            System.out.println("Failed to add new project. Please check the details and try again.");
+        }
+    }
+
+    private static void handleModifyProject() {
+        Scanner scanner = new Scanner(System.in);
+    
+        System.out.println("\n=== Modify Existing Project ===");
+        System.out.print("Enter the project name to modify: ");
+        String projectName = scanner.nextLine();
+    
+        System.out.print("Enter new neighborhood (leave blank to keep unchanged): ");
+        String newNeighborhood = scanner.nextLine();
+    
+        System.out.print("Enter new room type (leave blank to keep unchanged): ");
+        String roomTypeInput = scanner.nextLine();
+        RoomType newRoomType = roomTypeInput.isEmpty() ? null : RoomType.valueOf(roomTypeInput.toUpperCase());
+    
+        System.out.print("Enter new application opening date (dd/MM/yyyy, leave blank to keep unchanged): ");
+        String openingDateInput = scanner.nextLine();
+        LocalDate newOpeningDate = openingDateInput.isEmpty() ? null : LocalDate.parse(openingDateInput, DateTimeFormatter.ofPattern("d/M/yyyy"));
+    
+        System.out.print("Enter new application closing date (dd/MM/yyyy, leave blank to keep unchanged): ");
+        String closingDateInput = scanner.nextLine();
+        LocalDate newClosingDate = closingDateInput.isEmpty() ? null : LocalDate.parse(closingDateInput, DateTimeFormatter.ofPattern("d/M/yyyy"));
+    
+        boolean success = ProjectManager.editProject(
+            projectName, 
+            newNeighborhood.isEmpty() ? null : newNeighborhood, 
+            newRoomType, 
+            newOpeningDate, 
+            newClosingDate
+        );
+    
+        if (success) {
+            System.out.println("Project modified successfully!");
+        } else {
+            System.out.println("Failed to modify the project. Please check the details and try again.");
+        }
+    }
+
+    private static void handleRemoveProject() {
+        Scanner scanner = new Scanner(System.in);
+    
+        System.out.println("\n=== Remove Project ===");
+        System.out.print("Enter the project name to remove: ");
+        String projectName = scanner.nextLine();
+    
+        boolean success = ProjectManager.deleteProject(projectName);
+    
+        if (success) {
+            System.out.println("Project removed successfully!");
+        } else {
+            System.out.println("Failed to remove the project. Please check the project name and try again.");
+        }
+    }
+
     private static void toggleProjectVisibility() {
         List<BTOProject> projects = ProjectManager.getAllProjects();
         
@@ -247,6 +401,13 @@ public class App {
             int choice = Integer.parseInt(scanner.nextLine());
             if (choice >= 1 && choice <= projects.size()) {
                 BTOProject project = projects.get(choice - 1);
+                
+                // Check if the current user is the manager of the project
+                if (!(currentUser instanceof HDBManager) || !project.getManager().equals(currentUser)) {
+                    System.out.println("Error: You can only toggle visibility for projects you manage.");
+                    return;
+                }
+                
                 project.setVisibility(!project.getVisibility());
                 System.out.println("Project visibility toggled to: " + (project.getVisibility() ? "On" : "Off"));
             } else {
@@ -261,18 +422,27 @@ public class App {
         if (currentUser instanceof HDBManager) {
             switch (choice) {
                 case 1:
-                    displayProjects();
+                    handleViewProjects();
                     break;
                 case 2:
-                    toggleProjectVisibility();
+                    handleAddProject();
                     break;
                 case 3:
-                    manageApplications();
+                    handleModifyProject();
                     break;
                 case 4:
-                    handleChangePassword();
+                    handleRemoveProject();
                     break;
                 case 5:
+                    toggleProjectVisibility();
+                    break;
+                case 6:
+                    manageApplications();
+                    break;
+                case 7:
+                    handleChangePassword();
+                    break;
+                case 8:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
