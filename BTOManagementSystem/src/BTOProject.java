@@ -97,5 +97,5 @@ public class BTOProject {
     public void setApplicationOpeningDate(LocalDateTime applicationOpeningDate) { this.applicationOpeningDate = applicationOpeningDate; }
     public void setApplicationClosingDate(LocalDateTime applicationClosingDate) { this.applicationClosingDate = applicationClosingDate; }
     public void setEligibleGroups(List<MaritalStatus> eligibleGroups) { this.eligibleGroups = eligibleGroups; }
-    public void getFlatInventory(Map<RoomType, Integer> flatInventory) { this.flatInventory = flatInventory; }
+    public void setFlatInventory(Map<RoomType, Integer> flatInventory) { this.flatInventory = flatInventory; }
 }

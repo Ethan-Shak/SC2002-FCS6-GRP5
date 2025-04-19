@@ -9,6 +9,7 @@ public class App {
         ApplicantManager.loadApplicantsFromCSV("ApplicantList.csv");
         ManagerManager.loadManagersFromCSV("ManagerList.csv");
         OfficerManager.loadOfficersFromCSV("OfficerList.csv");
+        ProjectManager.loadProjectsFromCSV("ProjectList.csv");
         
         boolean running = true;
         while (running) {

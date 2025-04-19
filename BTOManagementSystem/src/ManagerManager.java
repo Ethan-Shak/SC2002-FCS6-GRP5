@@ -58,6 +58,15 @@ public class ManagerManager {
         return managers.get(nric);
     }
 
+    public static HDBManager getManagerByName(String name) {
+        for (HDBManager manager : managers.values()) {
+            if (manager.getName().equals(name)) {
+                return manager;
+            }
+        }
+        return null;
+    }
+
     public static void saveManagersToCSV() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
             // Write header

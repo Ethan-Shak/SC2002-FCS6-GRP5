@@ -58,6 +58,15 @@ public class OfficerManager {
         return officers.get(nric);
     }
 
+    public static HDBOfficer getOfficerByName(String name) {
+        for (HDBOfficer officer : officers.values()) {
+            if (officer.getName().equals(name)) {
+                return officer;
+            }
+        }
+        return null;
+    }
+
     public static void saveOfficersToCSV() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
             // Write header
