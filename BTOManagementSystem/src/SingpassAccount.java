@@ -1,5 +1,5 @@
 public class SingpassAccount {
-    private String username;
+    private String username; // Username is NRIC
     private String password;
 
     public SingpassAccount(String username, String password) {
