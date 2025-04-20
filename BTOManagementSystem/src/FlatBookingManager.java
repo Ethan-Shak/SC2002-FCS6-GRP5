@@ -4,6 +4,8 @@ import java.util.Map;
 public class FlatBookingManager implements IFlatBookingManager {
     // Map to track bookings by applicant NRIC
     private static Map<String, Flat> bookings = new HashMap<>();
+    // Map to track receipts by applicant NRIC
+    private static Map<String, BookingReceipt> receipts = new HashMap<>();
     
     @Override
     public boolean bookFlat(Applicant applicant, HDBOfficer officer, Flat flat) {
@@ -55,6 +57,10 @@ public class FlatBookingManager implements IFlatBookingManager {
         flat.bookFlat(applicant);
         bookings.put(applicant.getNRIC(), flat);
         
+        // Generate and store receipt
+        BookingReceipt receipt = new BookingReceipt(applicant, flat, project, officer);
+        receipts.put(applicant.getNRIC(), receipt);
+        
         // Update application status to BOOKED
         application.setApplicationStatus(ApplicationStatus.BOOKED);
         
@@ -68,6 +74,9 @@ public class FlatBookingManager implements IFlatBookingManager {
         }
         project.setFlatInventory(flatInventory);
         
+        // Display the receipt
+        System.out.println(receipt.generateReceipt());
+        
         return true;
     }
     
@@ -79,6 +88,16 @@ public class FlatBookingManager implements IFlatBookingManager {
     // Method to get all bookings
     public static Map<String, Flat> getAllBookings() {
         return new HashMap<>(bookings);
+    }
+    
+    // Method to get a receipt by applicant NRIC
+    public static BookingReceipt getReceipt(String applicantNRIC) {
+        return receipts.get(applicantNRIC);
+    }
+    
+    // Method to get all receipts
+    public static Map<String, BookingReceipt> getAllReceipts() {
+        return new HashMap<>(receipts);
     }
 
     // Method to release a flat when an applicant withdraws their application
@@ -95,8 +114,9 @@ public class FlatBookingManager implements IFlatBookingManager {
         // Release the flat
         bookedFlat.releaseFlat();
         
-        // Remove the booking
+        // Remove the booking and receipt
         bookings.remove(applicantNRIC);
+        receipts.remove(applicantNRIC);
         
         // Update flat inventory in the project
         Map<RoomType, Integer> flatInventory = project.getFlatInventory();
