@@ -11,7 +11,15 @@ public class SingpassAccount {
         return this.password.equals(inputPassword);
     }
 
-    public void resetPassword(String newPassword) {
+    public boolean changePassword(String currentPassword, String newPassword) {
+        if (!authenticate(currentPassword)) {
+            return false;
+        }
         this.password = newPassword;
+        return true;
+    }
+
+    public String getPassword() {
+        return this.password;
     }
 }

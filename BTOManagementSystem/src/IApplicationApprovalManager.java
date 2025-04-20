@@ -1,6 +1,6 @@
 public interface IApplicationApprovalManager {
-    void approveApplication(Applicant applicant, BTOProject project);
-    void rejectApplication(Applicant applicant);
-    void approveWithdrawal(Applicant applicant);
-    void rejectWithdrawal(Applicant applicant);
+    boolean applyForProject(Applicant applicant, BTOProject project, RoomType roomType);
+    boolean approveWithdrawal(Applicant applicant);
+    boolean approveApplication(Applicant applicant);
+    boolean rejectApplication(Applicant applicant);
 }

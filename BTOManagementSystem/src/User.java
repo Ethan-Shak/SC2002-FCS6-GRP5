@@ -6,7 +6,7 @@ public class User {
     private String password;
     private SingpassAccount singpassAccount;
 
-    public User(String name, String nric, int age, MaritalStatus maritalStatus) {
+    public User(String name, String nric, int age, MaritalStatus maritalStatus, String password) {
         if (!validateNRIC(nric)) {
             throw new IllegalArgumentException("Invalid NRIC format! It must start with S or T, followed by 7 digits and an uppercase letter.");
         }
@@ -17,7 +17,7 @@ public class User {
         this.nric = nric;
         this.age = age;
         this.maritalStatus = maritalStatus;
-        this.password = "password";
+        this.password = password;
         this.singpassAccount = new SingpassAccount(nric, password);
     }
 

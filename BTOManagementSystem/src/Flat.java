@@ -1,8 +1,10 @@
 public class Flat {
     private int flatID;
-    private RoomType type; 
+    private RoomType type;
+    private double price;
     private boolean isAvailable; 
     private Applicant assignedApplicant; 
+    private BTOProject project;
 
     public Flat(int flatID, RoomType type) {
         this.flatID = flatID;
@@ -11,11 +13,18 @@ public class Flat {
         this.assignedApplicant = null;
     }
 
+    public void setProject(BTOProject project) {
+        this.project = project;
+    }
+
+    public BTOProject getProject() {
+        return project;
+    }
+
     public void bookFlat(Applicant applicant) {
         if (isAvailable) {
             this.assignedApplicant = applicant;
             this.isAvailable = false;
-            System.out.println("Flat " + flatID + " booked successfully.");
         } else {
             System.out.println("Flat " + flatID + " is already booked.");
         }
@@ -46,4 +55,7 @@ public class Flat {
     public boolean isAvailable() {
         return isAvailable;
     }
+    
+    public RoomType getRoomType() { return type; }
+    public double getPrice() {return price;}
 }
