@@ -3,12 +3,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EnquiryManager {
+public class EnquiryManager implements IEnquiryManager {
     private static Map<Integer, Enquiry> enquiries = new HashMap<>();
     private static int nextEnquiryID = 1;
     
     // Submit a new enquiry
-    public static Enquiry submitEnquiry(Applicant applicant, BTOProject project, String content) {
+    @Override
+    public Enquiry submitEnquiry(Applicant applicant, BTOProject project, String content) {
         int enquiryID = nextEnquiryID++;
         Enquiry enquiry = new Enquiry(enquiryID, applicant, project, content);
         enquiries.put(enquiryID, enquiry);
@@ -16,7 +17,8 @@ public class EnquiryManager {
     }
     
     // Get all enquiries for an applicant
-    public static List<Enquiry> getEnquiriesForApplicant(Applicant applicant) {
+    @Override
+    public List<Enquiry> getEnquiriesForApplicant(Applicant applicant) {
         List<Enquiry> applicantEnquiries = new ArrayList<>();
         for (Enquiry enquiry : enquiries.values()) {
             if (enquiry.getApplicant().equals(applicant)) {
@@ -27,7 +29,8 @@ public class EnquiryManager {
     }
     
     // Get all enquiries for a project
-    public static List<Enquiry> getEnquiriesForProject(BTOProject project) {
+    @Override
+    public List<Enquiry> getEnquiriesForProject(BTOProject project) {
         List<Enquiry> projectEnquiries = new ArrayList<>();
         for (Enquiry enquiry : enquiries.values()) {
             if (enquiry.getProject().equals(project)) {
@@ -43,7 +46,8 @@ public class EnquiryManager {
     }
     
     // Update an enquiry
-    public static boolean updateEnquiry(int enquiryID, String newContent) {
+    @Override
+    public boolean updateEnquiry(int enquiryID, String newContent) {
         Enquiry enquiry = enquiries.get(enquiryID);
         if (enquiry == null) {
             return false;
@@ -54,7 +58,8 @@ public class EnquiryManager {
     }
     
     // Delete an enquiry
-    public static boolean deleteEnquiry(int enquiryID) {
+    @Override
+    public boolean deleteEnquiry(int enquiryID) {
         if (!enquiries.containsKey(enquiryID)) {
             return false;
         }
@@ -63,8 +68,32 @@ public class EnquiryManager {
         return true;
     }
     
+    // For applicants to get replies to their enquiries
+    @Override
+    public String getReply(int enquiryId) {
+        Enquiry enquiry = enquiries.get(enquiryId);
+        if (enquiry == null) {
+            return null;
+        }
+
+        return enquiry.getReply();
+    }
+    
     // Get all enquiries
     public static List<Enquiry> getAllEnquiries() {
         return new ArrayList<>(enquiries.values());
     }
+
+    // For officers to reply to enquiries
+    @Override
+    public boolean replyToEnquiry(int enquiryId, String message) {
+        Enquiry enquiry = enquiries.get(enquiryId);
+        if (enquiry == null) {
+            return false;
+        }
+
+        enquiry.setReply(message);
+        return true;
+    }
+
 } 
