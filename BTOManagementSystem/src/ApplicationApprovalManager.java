@@ -29,7 +29,13 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         // Check if application period is open
         LocalDate now = LocalDate.now();
         if (now.isBefore(project.getApplicationOpeningDate()) || now.isAfter(project.getApplicationClosingDate())) {
-            System.out.println("Error: Application period is not open for this project.");
+            if (now.isBefore(project.getApplicationOpeningDate())) {
+                System.out.println("Error: Application period is not open for this project yet. It will open on " + 
+                    project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            } else {
+                System.out.println("Error: Application period has closed for this project. It ended on " + 
+                    project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            }
             return false;
         }
         
