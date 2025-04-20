@@ -30,6 +30,14 @@ public BTOProject(String projectName, String neighbourhood, RoomType roomType, H
     this.eligibleGroups = new ArrayList<>();
     this.flatInventory = new HashMap<>();
     this.isVisible = true; // True by default
+    
+    // Initialize eligible groups based on room type
+    if (roomType == RoomType.TWO_ROOM) {
+        eligibleGroups.add(MaritalStatus.SINGLE);
+        eligibleGroups.add(MaritalStatus.MARRIED);
+    } else {
+        eligibleGroups.add(MaritalStatus.MARRIED);
+    }
 }
 
     // Initialize flats based on inventory

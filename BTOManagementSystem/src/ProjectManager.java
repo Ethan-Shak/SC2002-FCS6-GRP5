@@ -16,25 +16,25 @@ public class ProjectManager {
 
             while ((line = br.readLine()) != null) {
                 List<String> data = parseCSVLine(line);
-                if (data.size() >= 13) {
+                if (data.size() >= 11) {  // Changed to 11 columns (removed selling prices)
                     String projectName = data.get(0).trim();
                     String neighbourhood = data.get(1).trim();
 
                     RoomType type1 = parseRoomType(data.get(2).trim());
                     int unitsType1 = Integer.parseInt(data.get(3).trim());
-                    RoomType type2 = parseRoomType(data.get(5).trim());
-                    int unitsType2 = Integer.parseInt(data.get(6).trim());
+                    RoomType type2 = parseRoomType(data.get(4).trim());
+                    int unitsType2 = Integer.parseInt(data.get(5).trim());
 
-                    LocalDate openingDate = LocalDate.parse(data.get(8).trim(), DATE_FORMATTER);
-                    LocalDate closingDate = LocalDate.parse(data.get(9).trim(), DATE_FORMATTER);
-                    String managerName = data.get(10).trim();
-                    int officerSlots = Integer.parseInt(data.get(11).trim());
-                    String officersStr = data.get(12).trim();
+                    LocalDate openingDate = LocalDate.parse(data.get(6).trim(), DATE_FORMATTER);
+                    LocalDate closingDate = LocalDate.parse(data.get(7).trim(), DATE_FORMATTER);
+                    String managerName = data.get(8).trim();
+                    int officerSlots = Integer.parseInt(data.get(9).trim());
+                    String officersStr = data.get(10).trim();
 
                     String[] officerNames = officersStr.split(",");
 
                     HDBManager manager = ManagerController.getManagerByName(managerName);
-                    BTOProject project = new BTOProject(projectName, neighbourhood, type1, manager, openingDate, closingDate); // Fixed Constructor Call
+                    BTOProject project = new BTOProject(projectName, neighbourhood, type1, manager, openingDate, closingDate);
 
                     Map<RoomType, Integer> flatInventory = new HashMap<>();
                     flatInventory.put(type1, unitsType1);
@@ -69,23 +69,26 @@ public class ProjectManager {
             System.out.println("Successfully loaded projects from CSV file.");
         } catch (IOException | IllegalArgumentException e) {
             System.out.println("Error reading CSV file: " + e.getMessage());
+            e.printStackTrace();  // Added to see the full error stack trace
         }
     }
 
     // Save all projects into CSV (Overwrites existing file)
     public static void saveProjectsToCSV() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
-            writer.println("Project Name,Neighborhood,Room Type,Units Type 1,Units Type 2,Opening Date,Closing Date,Manager Name,Officer Slots,Officers");
+            writer.println("Project Name,Neighborhood,Type 1,Number of units for Type 1,Type 2,Number of units for Type 2,Application opening date,Application closing date,Manager,Officer Slot,Officer");
 
             for (BTOProject project : projects.values()) {
                 String officersStr = String.join(",", project.getAssignedOfficerNames());
 
-                writer.printf("%s,%s,%s,%d,%d,%s,%s,%s,%d,\"%s\"\n",
-                        project.getProjectName(), project.getNeighbourhood(), project.getRoomType(),
+                writer.printf("%s,%s,%s,%d,%s,%d,%s,%s,%s,%d,\"%s\"\n",
+                        project.getProjectName(), project.getNeighbourhood(), 
+                        project.getRoomType().toString().replace("_", "-"),
                         project.getFlatInventory().getOrDefault(RoomType.TWO_ROOM, 0),
+                        RoomType.THREE_ROOM.toString().replace("_", "-"),
                         project.getFlatInventory().getOrDefault(RoomType.THREE_ROOM, 0),
-                        project.getApplicationOpeningDate(),
-                        project.getApplicationClosingDate(),
+                        project.getApplicationOpeningDate().format(DATE_FORMATTER),
+                        project.getApplicationClosingDate().format(DATE_FORMATTER),
                         project.getManager().getName(), project.getNumberOfOfficers(), officersStr);
             }
         } catch (IOException e) {
@@ -206,12 +209,16 @@ public class ProjectManager {
     
             switch (normalized) {
                 case "2_ROOM":
+                case "TWO_ROOM":
                     return RoomType.TWO_ROOM;
                 case "3_ROOM":
+                case "THREE_ROOM":
                     return RoomType.THREE_ROOM;
                 case "4_ROOM":
+                case "FOUR_ROOM":
                     return RoomType.FOUR_ROOM;
                 case "5_ROOM":
+                case "FIVE_ROOM":
                     return RoomType.FIVE_ROOM;
                 default:
                     throw new IllegalArgumentException("Invalid room type: " + roomTypeStr);
