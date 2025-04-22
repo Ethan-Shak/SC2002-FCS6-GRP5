@@ -37,6 +37,14 @@ public class Enquiry {
         return content;
     }
 
+    public String getReply() {
+        return this.reply;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
     public void setContent(String content) {
         this.content = content;
         this.isEdited = true;
@@ -45,14 +53,6 @@ public class Enquiry {
 
     public void setReply(String reply) {
         this.reply = reply;
-    }
-
-    public String getReply() {
-        return this.reply;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
     }
 
     public boolean isEdited() {

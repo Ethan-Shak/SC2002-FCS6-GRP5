@@ -17,28 +17,28 @@ public class BTOProject {
     private Map<RoomType, Integer> flatInventory;
     private List<Flat> flats;
 
-public BTOProject(String projectName, String neighbourhood, RoomType roomType, HDBManager manager, 
-                  LocalDate applicationOpeningDate, LocalDate applicationClosingDate) {
-    this.projectName = projectName;
-    this.neighbourhood = neighbourhood;
-    this.roomType = roomType;
-    this.manager = manager;
-    this.applicationOpeningDate = applicationOpeningDate;
-    this.applicationClosingDate = applicationClosingDate;
-    this.flats = new ArrayList<>();
-    this.officers = new ArrayList<>();
-    this.eligibleGroups = new ArrayList<>();
-    this.flatInventory = new HashMap<>();
-    this.isVisible = true; // True by default
-    
-    // Initialize eligible groups based on room type
-    if (roomType == RoomType.TWO_ROOM) {
-        eligibleGroups.add(MaritalStatus.SINGLE);
-        eligibleGroups.add(MaritalStatus.MARRIED);
-    } else {
-        eligibleGroups.add(MaritalStatus.MARRIED);
+    public BTOProject(String projectName, String neighbourhood, RoomType roomType, HDBManager manager, 
+                    LocalDate applicationOpeningDate, LocalDate applicationClosingDate) {
+        this.projectName = projectName;
+        this.neighbourhood = neighbourhood;
+        this.roomType = roomType;
+        this.manager = manager;
+        this.applicationOpeningDate = applicationOpeningDate;
+        this.applicationClosingDate = applicationClosingDate;
+        this.flats = new ArrayList<>();
+        this.officers = new ArrayList<>();
+        this.eligibleGroups = new ArrayList<>();
+        this.flatInventory = new HashMap<>();
+        this.isVisible = true; // True by default
+        
+        // Initialize eligible groups based on room type
+        if (roomType == RoomType.TWO_ROOM) {
+            eligibleGroups.add(MaritalStatus.SINGLE);
+            eligibleGroups.add(MaritalStatus.MARRIED);
+        } else {
+            eligibleGroups.add(MaritalStatus.MARRIED);
+        }
     }
-}
 
     // Initialize flats based on inventory
     public void setFlatInventory(Map<RoomType, Integer> flatInventory) {  
