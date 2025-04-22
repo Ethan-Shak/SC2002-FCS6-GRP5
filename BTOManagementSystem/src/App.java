@@ -70,9 +70,10 @@ public class App {
             System.out.println("3. Withdraw Application");
             System.out.println("4. View Application Status");
             System.out.println("5. Book Flat for Applicant");
-            System.out.println("6. Manage Enquiries");
-            System.out.println("7. Change Password");
-            System.out.println("8. Logout");
+            System.out.println("6. Register for Project as Officer");
+            System.out.println("7. Manage Enquiries");
+            System.out.println("8. Change Password");
+            System.out.println("9. Logout");
         } else if (currentUser instanceof Applicant) {
             // Regular Applicant menu
             System.out.println("2. Apply for Project");
@@ -356,12 +357,15 @@ public class App {
                     bookFlatForApplicant();
                     break;
                 case 6:
-                    manageEnquiriesAsOfficer();
+                    registerForProjectAsOfficer();
                     break;
                 case 7:
-                    handleChangePassword();
+                    manageEnquiriesAsOfficer();
                     break;
                 case 8:
+                    handleChangePassword();
+                    break;
+                case 9:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -994,23 +998,7 @@ public class App {
         }
 
         HDBManager manager = (HDBManager) currentUser;
-        
-        // Check if manager already has an ongoing project
-        List<BTOProject> managedProjects = ProjectManager.getProjectsByManager(manager);
-        LocalDate currentDate = LocalDate.now();
-        
-        for (BTOProject project : managedProjects) {
-            if (!currentDate.isBefore(project.getApplicationOpeningDate()) && 
-                !currentDate.isAfter(project.getApplicationClosingDate())) {
-                System.out.println("\nError: You already have an ongoing project '" + project.getProjectName() + 
-                    "' with application period from " + 
-                    project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
-                    " to " + 
-                    project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
-                    ".\nYou can only manage one project at a time during its application period.");
-                return;
-            }
-        }
+        List<BTOProject> managedProjects = manager.getManagedProjects();
         
         System.out.println("\n=== Create New Project ===");
         System.out.print("Enter project name: ");
@@ -1506,6 +1494,65 @@ public class App {
                 }
             } else {
                 System.out.println("Invalid enquiry number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void registerForProjectAsOfficer() {
+        if (!(currentUser instanceof HDBOfficer)) {
+            System.out.println("This option is only available for HDB officers.");
+            return;
+        }
+        
+        HDBOfficer officer = (HDBOfficer) currentUser;
+        
+        // Display available projects
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        List<BTOProject> availableProjects = new ArrayList<>();
+        
+        System.out.println("\n=== Available Projects for Officer Registration ===");
+        int index = 1;
+        for (BTOProject project : projects) {
+            // Skip projects that already have the officer assigned
+            if (!officer.getAssignedProjects().contains(project)) {
+                System.out.println(index + ". " + project.getProjectName() + 
+                    " (" + project.getNeighbourhood() + ")");
+                System.out.println("   Application Period: " + 
+                    project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
+                    " to " + 
+                    project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")));
+                System.out.println("   Current Officers: " + project.getNumberOfOfficers() + "/10");
+                availableProjects.add(project);
+                index++;
+            }
+        }
+        
+        if (availableProjects.isEmpty()) {
+            System.out.println("No available projects for registration.");
+            return;
+        }
+        
+        System.out.print("Enter project number to register: ");
+        try {
+            int projectChoice = Integer.parseInt(scanner.nextLine());
+            if (projectChoice >= 1 && projectChoice <= availableProjects.size()) {
+                BTOProject selectedProject = availableProjects.get(projectChoice - 1);
+                
+                // Check if the officer is eligible to register for this project
+                if (OfficerEligibilityManager.isEligibleForProject(officer, selectedProject)) {
+                    // Try to add the officer to the project
+                    if (selectedProject.addOfficer(officer)) {
+                        // Register the officer for the project
+                        officer.registerForProject(selectedProject);
+                        System.out.println("Successfully registered for project: " + selectedProject.getProjectName());
+                    } else {
+                        System.out.println("Failed to register for project: " + selectedProject.getProjectName());
+                    }
+                }
+            } else {
+                System.out.println("Invalid project number.");
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");

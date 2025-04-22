@@ -1,4 +1,5 @@
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,7 +89,16 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
     }
     
     // Helper method to check if an applicant is eligible for a project
-    private boolean isEligibleForProject(Applicant applicant, BTOProject project) {
+    private static boolean isEligibleForProject(Applicant applicant, BTOProject project) {
+        // Check if applicant is an HDB Officer and is already assigned to this project
+        if (applicant instanceof HDBOfficer) {
+            HDBOfficer officer = (HDBOfficer) applicant;
+            if (officer.getAssignedProjects().contains(project)) {
+                System.out.println("Error: As an HDB Officer assigned to this project, you cannot apply for it as an applicant.");
+                return false;
+            }
+        }
+        
         // Singles, 35 years old and above, can ONLY apply for 2-Room
         if (applicant.getMaritalStatus() == MaritalStatus.SINGLE) {
             if (applicant.getAge() >= 35) {
@@ -141,5 +151,54 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         application.setApplicationStatus(ApplicationStatus.UNSUCCESSFUL);
         System.out.println("Application rejected.");
         return true;
+    }
+
+    public static boolean applyForProject(Applicant applicant, BTOProject project) {
+        // Check if applicant already has an application
+        if (applications.containsKey(applicant.getNRIC())) {
+            System.out.println("Error: You already have an active application.");
+            return false;
+        }
+        
+        // Check if project is visible to applicant
+        if (!project.checkVisibility(applicant)) {
+            System.out.println("Error: This project is not available for application.");
+            return false;
+        }
+        
+        // Check if applicant is eligible for the project
+        if (!isEligibleForProject(applicant, project)) {
+            if (applicant instanceof HDBOfficer) {
+                HDBOfficer officer = (HDBOfficer) applicant;
+                if (officer.getAssignedProjects().contains(project)) {
+                    System.out.println("Error: As an HDB Officer assigned to this project, you cannot apply for it as an applicant.");
+                    return false;
+                }
+            }
+            System.out.println("Error: You are not eligible for this project based on your marital status and age.");
+            return false;
+        }
+        
+        // Check if application period is open
+        LocalDate now = LocalDate.now();
+        if (now.isBefore(project.getApplicationOpeningDate()) || now.isAfter(project.getApplicationClosingDate())) {
+            System.out.println("Error: The application period for this project is currently closed.");
+            return false;
+        }
+        
+        // Create and store the application
+        try {
+            BTOApplication application = new BTOApplication(applicant, project, project.getRoomType());
+            applications.put(applicant.getNRIC(), application);
+            
+            // Update the applicant's application reference
+            applicant.setApplication(application);
+            
+            System.out.println("Application submitted successfully!");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Error applying for project: " + e.getMessage());
+            return false;
+        }
     }
 } 

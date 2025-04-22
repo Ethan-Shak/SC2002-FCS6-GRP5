@@ -120,6 +120,13 @@ public class ProjectManager {
             return false;
         }
 
+        // Check for conflicting projects using the comprehensive check
+        if (managerHasConflictingProject(manager, openingDate, closingDate)) {
+            System.out.println("Error: You already have a project with an overlapping application period.");
+            System.out.println("You cannot manage multiple projects with overlapping application periods.");
+            return false;
+        }
+
         BTOProject newProject = new BTOProject(projectName, neighborhood, roomType, manager, openingDate, closingDate);
 
         projects.put(projectName, newProject);
@@ -201,6 +208,11 @@ public class ProjectManager {
 
         result.add(current.toString());
         return result;
+    }
+
+    // Get a project by its name
+    public static BTOProject getProjectByName(String projectName) {
+        return projects.get(projectName);
     }
 
     private static RoomType parseRoomType(String roomTypeStr) {

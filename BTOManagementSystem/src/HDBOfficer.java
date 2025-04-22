@@ -13,6 +13,11 @@ public class HDBOfficer extends Applicant {
 
     public void registerForProject(BTOProject project) {
         if (registrationStatus.equals("Pending")) {
+            // Check if the officer is eligible to register for this project
+            if (!OfficerEligibilityManager.isEligibleForProject(this, project)) {
+                return;
+            }
+            
             if (!assignedProjects.contains(project)) {
                 assignedProjects.add(project);
                 registrationStatus = "Approved";

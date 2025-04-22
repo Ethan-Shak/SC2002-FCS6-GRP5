@@ -72,8 +72,15 @@ public BTOProject(String projectName, String neighbourhood, RoomType roomType, H
     // Add officer to project
     public boolean addOfficer(HDBOfficer officer) {
         if (officers.size() >= 10) { // Maximum 10 officers allowed
+            System.out.println("Error: Maximum number of officers (10) already reached for this project.");
             return false;
         }
+        
+        // Check if the officer is eligible to register for this project
+        if (!OfficerEligibilityManager.isEligibleForProject(officer, this)) {
+            return false;
+        }
+        
         officers.add(officer);
         return true;
     }

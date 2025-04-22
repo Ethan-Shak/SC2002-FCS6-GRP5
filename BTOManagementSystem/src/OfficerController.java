@@ -3,7 +3,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OfficerController {
@@ -18,15 +20,32 @@ public class OfficerController {
             
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(",");
-                if (data.length >= 5) { // We need name, nric, age, maritalstatus, and password
+                if (data.length >= 5) { // We need at least name, nric, age, maritalstatus, and password
                     String name = data[0].trim();
                     String nric = data[1].trim();
                     int age = Integer.parseInt(data[2].trim());
                     MaritalStatus maritalStatus = MaritalStatus.valueOf(data[3].trim().toUpperCase());
                     String password = data[4].trim();
-
+                    
                     HDBOfficer officer = new HDBOfficer(name, nric, age, maritalStatus, password);
                     officers.put(nric, officer);
+
+                    // Handle project assignments if any (if the Projects column exists)
+                    if (data.length >= 6) {
+                        String projectsStr = data[5].trim();
+                        if (!projectsStr.isEmpty()) {
+                            String[] projectNames = projectsStr.split(";");
+                            for (String projectName : projectNames) {
+                                projectName = projectName.trim();
+                                if (!projectName.isEmpty()) {
+                                    BTOProject project = ProjectManager.getProjectByName(projectName);
+                                    if (project != null) {
+                                        officer.registerForProject(project);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             System.out.println("Successfully loaded officers from CSV file.");
@@ -80,16 +99,23 @@ public class OfficerController {
     public static void saveOfficersToCSV() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
             // Write header
-            writer.println("Name,NRIC,Age,MaritalStatus,Password");
+            writer.println("Name,NRIC,Age,MaritalStatus,Password,Projects");
             
             // Write data for each officer
             for (HDBOfficer officer : officers.values()) {
-                writer.printf("%s,%s,%d,%s,%s%n",
+                List<String> projectNames = new ArrayList<>();
+                for (BTOProject project : officer.getAssignedProjects()) {
+                    projectNames.add(project.getProjectName());
+                }
+                String projectsStr = String.join(";", projectNames);
+                
+                writer.printf("%s,%s,%d,%s,%s,%s%n",
                     officer.getName(),
                     officer.getNRIC(),
                     officer.getAge(),
                     officer.getMaritalStatus(),
-                    officer.getSingpassAccount().getPassword());
+                    officer.getSingpassAccount().getPassword(),
+                    projectsStr);
             }
             System.out.println("Successfully saved officers to CSV file.");
         } catch (IOException e) {
