@@ -71,9 +71,10 @@ public class App {
             System.out.println("4. View Application Status");
             System.out.println("5. Book Flat for Applicant");
             System.out.println("6. Register for Project as Officer");
-            System.out.println("7. Manage Enquiries");
-            System.out.println("8. Change Password");
-            System.out.println("9. Logout");
+            System.out.println("7. View Registration Status");
+            System.out.println("8. Manage Enquiries");
+            System.out.println("9. Change Password");
+            System.out.println("10. Logout");
         } else if (currentUser instanceof Applicant) {
             // Regular Applicant menu
             System.out.println("2. Apply for Project");
@@ -360,12 +361,15 @@ public class App {
                     registerForProjectAsOfficer();
                     break;
                 case 7:
-                    manageEnquiriesAsOfficer();
+                    viewOfficerRegistrationStatus();
                     break;
                 case 8:
-                    handleChangePassword();
+                    manageEnquiriesAsOfficer();
                     break;
                 case 9:
+                    handleChangePassword();
+                    break;
+                case 10:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -1556,6 +1560,33 @@ public class App {
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void viewOfficerRegistrationStatus() {
+        if (!(currentUser instanceof HDBOfficer)) {
+            System.out.println("This option is only available for HDB officers.");
+            return;
+        }
+        
+        HDBOfficer officer = (HDBOfficer) currentUser;
+        String status = officer.getRegistrationStatus();
+        List<BTOProject> assignedProjects = officer.getAssignedProjects();
+        
+        System.out.println("\n=== Officer Registration Status ===");
+        System.out.println("Current Status: " + status);
+        
+        if (!assignedProjects.isEmpty()) {
+            System.out.println("\nAssigned Projects:");
+            for (BTOProject project : assignedProjects) {
+                System.out.println("- " + project.getProjectName() + " (" + project.getNeighbourhood() + ")");
+                System.out.println("  Application Period: " + 
+                    project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
+                    " to " + 
+                    project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")));
+            }
+        } else {
+            System.out.println("\nNo projects assigned yet.");
         }
     }
 }
