@@ -61,16 +61,18 @@ public class App {
             System.out.println("4. Delete Project");
             System.out.println("5. Toggle Project Visibility");
             System.out.println("6. Manage Applications");
-            System.out.println("7. Change Password");
-            System.out.println("8. Logout");
+            System.out.println("7. Manage Enquiries");
+            System.out.println("8. Change Password");
+            System.out.println("9. Logout");
         } else if (currentUser instanceof HDBOfficer) {
             // HDB Officer menu (includes both applicant and officer options)
             System.out.println("2. Apply for Project");
             System.out.println("3. Withdraw Application");
             System.out.println("4. View Application Status");
             System.out.println("5. Book Flat for Applicant");
-            System.out.println("6. Change Password");
-            System.out.println("7. Logout");
+            System.out.println("6. Manage Enquiries");
+            System.out.println("7. Change Password");
+            System.out.println("8. Logout");
         } else if (currentUser instanceof Applicant) {
             // Regular Applicant menu
             System.out.println("2. Apply for Project");
@@ -324,9 +326,12 @@ public class App {
                     manageApplications();
                     break;
                 case 7:
-                    handleChangePassword();
+                    manageEnquiriesAsManager();
                     break;
                 case 8:
+                    handleChangePassword();
+                    break;
+                case 9:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -351,9 +356,12 @@ public class App {
                     bookFlatForApplicant();
                     break;
                 case 6:
-                    handleChangePassword();
+                    manageEnquiriesAsOfficer();
                     break;
                 case 7:
+                    handleChangePassword();
+                    break;
+                case 8:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -1210,6 +1218,294 @@ public class App {
             
             if (confirm.equals("y") || confirm.equals("yes")) {
                 ProjectManager.deleteProject(project.getProjectName());
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void manageEnquiriesAsManager() {
+        if (!(currentUser instanceof HDBManager)) {
+            System.out.println("This option is only available for HDB managers.");
+            return;
+        }
+        
+        HDBManager manager = (HDBManager) currentUser;
+        
+        boolean running = true;
+        while (running) {
+            System.out.println("\n=== Manage Enquiries ===");
+            System.out.println("1. View All Unanswered Enquiries");
+            System.out.println("2. View My Project Enquiries");
+            System.out.println("3. Respond to Enquiry");
+            System.out.println("4. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                
+                switch (choice) {
+                    case 1:
+                        viewAllUnansweredEnquiries();
+                        break;
+                    case 2:
+                        viewManagerProjectEnquiries(manager);
+                        break;
+                    case 3:
+                        respondToEnquiry(manager);
+                        break;
+                    case 4:
+                        running = false;
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+    
+    private static void manageEnquiriesAsOfficer() {
+        if (!(currentUser instanceof HDBOfficer)) {
+            System.out.println("This option is only available for HDB officers.");
+            return;
+        }
+        
+        HDBOfficer officer = (HDBOfficer) currentUser;
+        
+        boolean running = true;
+        while (running) {
+            System.out.println("\n=== Manage Enquiries ===");
+            System.out.println("1. View Project Enquiries");
+            System.out.println("2. Respond to Enquiry");
+            System.out.println("3. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                
+                switch (choice) {
+                    case 1:
+                        viewOfficerProjectEnquiries(officer);
+                        break;
+                    case 2:
+                        respondToEnquiry(officer);
+                        break;
+                    case 3:
+                        running = false;
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+    
+    private static void viewAllUnansweredEnquiries() {
+        List<Enquiry> unansweredEnquiries = EnquiryManager.getAllUnansweredEnquiries();
+        
+        if (unansweredEnquiries.isEmpty()) {
+            System.out.println("No unanswered enquiries.");
+            return;
+        }
+        
+        System.out.println("\n=== All Unanswered Enquiries ===");
+        for (Enquiry enquiry : unansweredEnquiries) {
+            System.out.println("\n" + enquiry.toString());
+        }
+    }
+    
+    private static void viewManagerProjectEnquiries(HDBManager manager) {
+        List<BTOProject> managedProjects = manager.getManagedProjects();
+        
+        if (managedProjects.isEmpty()) {
+            System.out.println("You are not managing any projects.");
+            return;
+        }
+        
+        System.out.println("\n=== Select Project to View Enquiries ===");
+        for (int i = 0; i < managedProjects.size(); i++) {
+            BTOProject project = managedProjects.get(i);
+            System.out.println((i + 1) + ". " + project.getProjectName());
+        }
+        
+        System.out.print("Enter project number: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= managedProjects.size()) {
+                BTOProject selectedProject = managedProjects.get(choice - 1);
+                
+                System.out.println("\n=== Unanswered Enquiries for " + selectedProject.getProjectName() + " ===");
+                List<Enquiry> unansweredEnquiries = EnquiryManager.getUnansweredEnquiriesForProject(selectedProject);
+                if (unansweredEnquiries.isEmpty()) {
+                    System.out.println("No unanswered enquiries for this project.");
+                } else {
+                    for (Enquiry enquiry : unansweredEnquiries) {
+                        System.out.println("\n" + enquiry.toString());
+                    }
+                }
+                
+                System.out.println("\n=== Answered Enquiries for " + selectedProject.getProjectName() + " ===");
+                List<Enquiry> answeredEnquiries = EnquiryManager.getAnsweredEnquiriesForProject(selectedProject);
+                if (answeredEnquiries.isEmpty()) {
+                    System.out.println("No answered enquiries for this project.");
+                } else {
+                    for (Enquiry enquiry : answeredEnquiries) {
+                        System.out.println("\n" + enquiry.toString());
+                    }
+                }
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void viewOfficerProjectEnquiries(HDBOfficer officer) {
+        List<BTOProject> assignedProjects = officer.getAssignedProjects();
+        
+        if (assignedProjects.isEmpty()) {
+            System.out.println("You are not assigned to any projects.");
+            return;
+        }
+        
+        System.out.println("\n=== Select Project to View Enquiries ===");
+        for (int i = 0; i < assignedProjects.size(); i++) {
+            BTOProject project = assignedProjects.get(i);
+            System.out.println((i + 1) + ". " + project.getProjectName());
+        }
+        
+        System.out.print("Enter project number: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= assignedProjects.size()) {
+                BTOProject selectedProject = assignedProjects.get(choice - 1);
+                
+                System.out.println("\n=== Unanswered Enquiries for " + selectedProject.getProjectName() + " ===");
+                List<Enquiry> unansweredEnquiries = EnquiryManager.getUnansweredEnquiriesForProject(selectedProject);
+                if (unansweredEnquiries.isEmpty()) {
+                    System.out.println("No unanswered enquiries for this project.");
+                } else {
+                    for (Enquiry enquiry : unansweredEnquiries) {
+                        System.out.println("\n" + enquiry.toString());
+                    }
+                }
+                
+                System.out.println("\n=== Answered Enquiries for " + selectedProject.getProjectName() + " ===");
+                List<Enquiry> answeredEnquiries = EnquiryManager.getAnsweredEnquiriesForProject(selectedProject);
+                if (answeredEnquiries.isEmpty()) {
+                    System.out.println("No answered enquiries for this project.");
+                } else {
+                    for (Enquiry enquiry : answeredEnquiries) {
+                        System.out.println("\n" + enquiry.toString());
+                    }
+                }
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void respondToEnquiry(User responder) {
+        List<Enquiry> enquiries;
+        if (responder instanceof HDBManager) {
+            HDBManager manager = (HDBManager) responder;
+            System.out.println("\n=== Select Project ===");
+            List<BTOProject> managedProjects = manager.getManagedProjects();
+            
+            if (managedProjects.isEmpty()) {
+                System.out.println("You are not managing any projects.");
+                return;
+            }
+            
+            for (int i = 0; i < managedProjects.size(); i++) {
+                BTOProject project = managedProjects.get(i);
+                System.out.println((i + 1) + ". " + project.getProjectName());
+            }
+            
+            System.out.print("Enter project number: ");
+            try {
+                int projectChoice = Integer.parseInt(scanner.nextLine());
+                if (projectChoice >= 1 && projectChoice <= managedProjects.size()) {
+                    BTOProject selectedProject = managedProjects.get(projectChoice - 1);
+                    enquiries = EnquiryManager.getUnansweredEnquiriesForProject(selectedProject);
+                } else {
+                    System.out.println("Invalid project number.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                return;
+            }
+        } else {
+            HDBOfficer officer = (HDBOfficer) responder;
+            System.out.println("\n=== Select Project ===");
+            List<BTOProject> assignedProjects = officer.getAssignedProjects();
+            
+            if (assignedProjects.isEmpty()) {
+                System.out.println("You are not assigned to any projects.");
+                return;
+            }
+            
+            for (int i = 0; i < assignedProjects.size(); i++) {
+                BTOProject project = assignedProjects.get(i);
+                System.out.println((i + 1) + ". " + project.getProjectName());
+            }
+            
+            System.out.print("Enter project number: ");
+            try {
+                int projectChoice = Integer.parseInt(scanner.nextLine());
+                if (projectChoice >= 1 && projectChoice <= assignedProjects.size()) {
+                    BTOProject selectedProject = assignedProjects.get(projectChoice - 1);
+                    enquiries = EnquiryManager.getUnansweredEnquiriesForProject(selectedProject);
+                } else {
+                    System.out.println("Invalid project number.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                return;
+            }
+        }
+        
+        if (enquiries.isEmpty()) {
+            System.out.println("No unanswered enquiries for this project.");
+            return;
+        }
+        
+        System.out.println("\n=== Select Enquiry to Respond ===");
+        for (int i = 0; i < enquiries.size(); i++) {
+            Enquiry enquiry = enquiries.get(i);
+            System.out.println((i + 1) + ". " + enquiry.toString());
+        }
+        
+        System.out.print("Enter enquiry number: ");
+        try {
+            int enquiryChoice = Integer.parseInt(scanner.nextLine());
+            if (enquiryChoice >= 1 && enquiryChoice <= enquiries.size()) {
+                Enquiry selectedEnquiry = enquiries.get(enquiryChoice - 1);
+                
+                System.out.print("Enter your response: ");
+                String response = scanner.nextLine();
+                
+                if (response.trim().isEmpty()) {
+                    System.out.println("Response cannot be empty.");
+                    return;
+                }
+                
+                if (EnquiryManager.respondToEnquiry(selectedEnquiry.getEnquiryID(), response, responder)) {
+                    System.out.println("Response submitted successfully.");
+                } else {
+                    System.out.println("Failed to submit response.");
+                }
+            } else {
+                System.out.println("Invalid enquiry number.");
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");

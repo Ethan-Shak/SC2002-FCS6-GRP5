@@ -67,4 +67,62 @@ public class EnquiryManager {
     public static List<Enquiry> getAllEnquiries() {
         return new ArrayList<>(enquiries.values());
     }
+    
+    // Respond to an enquiry
+    public static boolean respondToEnquiry(int enquiryID, String response, User responder) {
+        Enquiry enquiry = enquiries.get(enquiryID);
+        if (enquiry == null) {
+            return false;
+        }
+        
+        // Check if responder is authorized (either manager of the project or an officer assigned to it)
+        BTOProject project = enquiry.getProject();
+        boolean isAuthorized = false;
+        
+        if (responder instanceof HDBManager) {
+            isAuthorized = project.getManager().equals(responder);
+        } else if (responder instanceof HDBOfficer) {
+            isAuthorized = project.getOfficers().contains(responder);
+        }
+        
+        if (!isAuthorized) {
+            return false;
+        }
+        
+        enquiry.setResponse(response, responder);
+        return true;
+    }
+    
+    // Get all enquiries for a project that need responses
+    public static List<Enquiry> getUnansweredEnquiriesForProject(BTOProject project) {
+        List<Enquiry> unansweredEnquiries = new ArrayList<>();
+        for (Enquiry enquiry : enquiries.values()) {
+            if (enquiry.getProject().equals(project) && !enquiry.hasResponse()) {
+                unansweredEnquiries.add(enquiry);
+            }
+        }
+        return unansweredEnquiries;
+    }
+    
+    // Get all enquiries for a project that have responses
+    public static List<Enquiry> getAnsweredEnquiriesForProject(BTOProject project) {
+        List<Enquiry> answeredEnquiries = new ArrayList<>();
+        for (Enquiry enquiry : enquiries.values()) {
+            if (enquiry.getProject().equals(project) && enquiry.hasResponse()) {
+                answeredEnquiries.add(enquiry);
+            }
+        }
+        return answeredEnquiries;
+    }
+    
+    // Get all enquiries that need responses (for managers to view all)
+    public static List<Enquiry> getAllUnansweredEnquiries() {
+        List<Enquiry> unansweredEnquiries = new ArrayList<>();
+        for (Enquiry enquiry : enquiries.values()) {
+            if (!enquiry.hasResponse()) {
+                unansweredEnquiries.add(enquiry);
+            }
+        }
+        return unansweredEnquiries;
+    }
 } 

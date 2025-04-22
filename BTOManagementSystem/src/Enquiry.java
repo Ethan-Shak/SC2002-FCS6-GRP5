@@ -8,6 +8,9 @@ public class Enquiry {
     private LocalDateTime timestamp;
     private boolean isEdited;
     private LocalDateTime lastEditedTime;
+    private String response;
+    private User responder;
+    private LocalDateTime responseTime;
 
     public Enquiry(int enquiryID, Applicant applicant, BTOProject project, String content) {
         this.enquiryID = enquiryID;
@@ -17,6 +20,9 @@ public class Enquiry {
         this.timestamp = LocalDateTime.now();
         this.isEdited = false;
         this.lastEditedTime = null;
+        this.response = null;
+        this.responder = null;
+        this.responseTime = null;
     }
 
     public int getEnquiryID() {
@@ -53,6 +59,28 @@ public class Enquiry {
         return lastEditedTime;
     }
 
+    public String getResponse() {
+        return response;
+    }
+
+    public void setResponse(String response, User responder) {
+        this.response = response;
+        this.responder = responder;
+        this.responseTime = LocalDateTime.now();
+    }
+
+    public User getResponder() {
+        return responder;
+    }
+
+    public LocalDateTime getResponseTime() {
+        return responseTime;
+    }
+
+    public boolean hasResponse() {
+        return response != null;
+    }
+
     @Override
     public String toString() {
         String result = "Enquiry #" + enquiryID + " - " + project.getProjectName() + "\n";
@@ -61,6 +89,12 @@ public class Enquiry {
         
         if (isEdited) {
             result += "\nLast edited: " + lastEditedTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        }
+        
+        if (hasResponse()) {
+            result += "\n\nResponse from " + responder.getName() + " (" + responder.getClass().getSimpleName() + "):";
+            result += "\n" + response;
+            result += "\nResponded: " + responseTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
         }
         
         return result;
