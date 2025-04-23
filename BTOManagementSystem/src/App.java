@@ -1273,9 +1273,13 @@ public class App {
         boolean running = true;
         while (running) {
             System.out.println("\n=== Manage Enquiries ===");
-            System.out.println("1. View Project Enquiries");
-            System.out.println("2. Respond to Enquiry");
-            System.out.println("3. Back to Main Menu");
+            System.out.println("1. Submit New Enquiry");
+            System.out.println("2. View My Enquiries");
+            System.out.println("3. Edit My Enquiry");
+            System.out.println("4. Delete My Enquiry");
+            System.out.println("5. View Project Enquiries");
+            System.out.println("6. Respond to Enquiry");
+            System.out.println("7. Back to Main Menu");
             System.out.print("Enter your choice: ");
             
             try {
@@ -1283,12 +1287,24 @@ public class App {
                 
                 switch (choice) {
                     case 1:
-                        viewOfficerProjectEnquiries(officer);
+                        submitEnquiry(officer);
                         break;
                     case 2:
-                        respondToEnquiry(officer);
+                        viewEnquiries(officer);
                         break;
                     case 3:
+                        editEnquiry(officer);
+                        break;
+                    case 4:
+                        deleteEnquiry(officer);
+                        break;
+                    case 5:
+                        viewOfficerProjectEnquiries(officer);
+                        break;
+                    case 6:
+                        respondToEnquiry(officer);
+                        break;
+                    case 7:
                         running = false;
                         break;
                     default:
