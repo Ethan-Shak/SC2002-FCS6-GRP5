@@ -232,19 +232,40 @@ public class App {
                     displayProjectDetails(project, true);
                 }
             }
+        } else if (currentUser instanceof HDBOfficer) {
+            // Officers can see all projects they are assigned to, regardless of visibility
+            HDBOfficer officer = (HDBOfficer) currentUser;
+            List<BTOProject> assignedProjects = officer.getAssignedProjects();
+            
+            if (assignedProjects.isEmpty()) {
+                System.out.println("You are not assigned to any projects.");
+                return;
+            }
+            
+            System.out.println("\n=== Your Assigned Projects ===");
+            for (BTOProject project : assignedProjects) {
+                displayProjectDetails(project, false);
+            }
+            
+            // Also show visible projects they can apply for
+            List<BTOProject> visibleProjects = new ArrayList<>();
+            for (BTOProject project : projects) {
+                if (project.checkVisibility(officer) && !assignedProjects.contains(project)) {
+                    visibleProjects.add(project);
+                }
+            }
+            
+            if (!visibleProjects.isEmpty()) {
+                System.out.println("\n=== Available Projects for Application ===");
+                for (BTOProject project : visibleProjects) {
+                    displayProjectDetails(project, false);
+                }
+            }
         } else if (currentUser instanceof Applicant) {
             // Applicants can only see projects visible to their user group
             System.out.println("\n=== Available Projects ===");
             for (BTOProject project : projects) {
                 if (project.checkVisibility((Applicant)currentUser)) {
-                    displayProjectDetails(project, false);
-                }
-            }
-        } else if (currentUser instanceof HDBOfficer) {
-            // Officers can see all projects they are assigned to
-            System.out.println("\n=== Assigned Projects ===");
-            for (BTOProject project : projects) {
-                if (project.getOfficers().contains(currentUser)) {
                     displayProjectDetails(project, false);
                 }
             }
