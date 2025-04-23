@@ -63,8 +63,9 @@ public class App {
             System.out.println("6. Manage Applications");
             System.out.println("7. Manage Enquiries");
             System.out.println("8. Manage Officer Registrations");
-            System.out.println("9. Change Password");
-            System.out.println("10. Logout");
+            System.out.println("9. Generate Reports");
+            System.out.println("10. Change Password");
+            System.out.println("11. Logout");
         } else if (currentUser instanceof HDBOfficer) {
             // HDB Officer menu (includes both applicant and officer options)
             System.out.println("2. Apply for Project");
@@ -356,9 +357,12 @@ public class App {
                     manageOfficerRegistrations();
                     break;
                 case 9:
-                    handleChangePassword();
+                    generateReports();
                     break;
                 case 10:
+                    handleChangePassword();
+                    break;
+                case 11:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -1727,6 +1731,245 @@ public class App {
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+
+    private static void generateReports() {
+        if (!(currentUser instanceof HDBManager)) {
+            System.out.println("This option is only available for HDB managers.");
+            return;
+        }
+        
+        boolean running = true;
+        while (running) {
+            System.out.println("\n=== Generate Reports ===");
+            System.out.println("1. View All Bookings");
+            System.out.println("2. Filter by Marital Status");
+            System.out.println("3. Filter by Flat Type");
+            System.out.println("4. Filter by Project");
+            System.out.println("5. Filter by Age Range");
+            System.out.println("6. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                
+                switch (choice) {
+                    case 1:
+                        displayAllBookings();
+                        break;
+                    case 2:
+                        filterByMaritalStatus();
+                        break;
+                    case 3:
+                        filterByFlatType();
+                        break;
+                    case 4:
+                        filterByProject();
+                        break;
+                    case 5:
+                        filterByAgeRange();
+                        break;
+                    case 6:
+                        running = false;
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+    
+    private static void displayAllBookings() {
+        Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
+        if (bookings.isEmpty()) {
+            System.out.println("No bookings found.");
+            return;
+        }
+        
+        System.out.println("\n=== All Bookings ===");
+        for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
+            String applicantNRIC = entry.getKey();
+            Flat flat = entry.getValue();
+            BTOProject project = flat.getProject();
+            Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
+            
+            if (applicant != null) {
+                System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
+                System.out.println("Age: " + applicant.getAge());
+                System.out.println("Marital Status: " + applicant.getMaritalStatus());
+                System.out.println("Project: " + project.getProjectName());
+                System.out.println("Flat Type: " + flat.getType());
+            }
+        }
+    }
+    
+    private static void filterByMaritalStatus() {
+        System.out.println("\n=== Filter by Marital Status ===");
+        System.out.println("1. Married");
+        System.out.println("2. Single");
+        System.out.print("Enter your choice: ");
+        
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            MaritalStatus status = (choice == 1) ? MaritalStatus.MARRIED : MaritalStatus.SINGLE;
+            
+            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
+            boolean found = false;
+            
+            System.out.println("\n=== Bookings for " + status + " Applicants ===");
+            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
+                String applicantNRIC = entry.getKey();
+                Flat flat = entry.getValue();
+                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
+                
+                if (applicant != null && applicant.getMaritalStatus() == status) {
+                    found = true;
+                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
+                    System.out.println("Age: " + applicant.getAge());
+                    System.out.println("Project: " + flat.getProject().getProjectName());
+                    System.out.println("Flat Type: " + flat.getType());
+                }
+            }
+            
+            if (!found) {
+                System.out.println("No bookings found for " + status + " applicants.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void filterByFlatType() {
+        System.out.println("\n=== Filter by Flat Type ===");
+        System.out.println("1. TWO_ROOM");
+        System.out.println("2. THREE_ROOM");
+        System.out.print("Enter your choice: ");
+        
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            RoomType type = (choice == 1) ? RoomType.TWO_ROOM : RoomType.THREE_ROOM;
+            
+            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
+            boolean found = false;
+            
+            System.out.println("\n=== Bookings for " + type + " Flats ===");
+            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
+                String applicantNRIC = entry.getKey();
+                Flat flat = entry.getValue();
+                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
+                
+                if (flat.getType() == type) {
+                    found = true;
+                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
+                    System.out.println("Age: " + applicant.getAge());
+                    System.out.println("Marital Status: " + applicant.getMaritalStatus());
+                    System.out.println("Project: " + flat.getProject().getProjectName());
+                }
+            }
+            
+            if (!found) {
+                System.out.println("No bookings found for " + type + " flats.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void filterByProject() {
+        List<BTOProject> projects = ProjectManager.getAllProjects();
+        if (projects.isEmpty()) {
+            System.out.println("No projects available.");
+            return;
+        }
+        
+        System.out.println("\n=== Select Project ===");
+        for (int i = 0; i < projects.size(); i++) {
+            System.out.println((i + 1) + ". " + projects.get(i).getProjectName());
+        }
+        
+        System.out.print("Enter project number: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice < 1 || choice > projects.size()) {
+                System.out.println("Invalid project number.");
+                return;
+            }
+            
+            BTOProject selectedProject = projects.get(choice - 1);
+            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
+            boolean found = false;
+            
+            System.out.println("\n=== Bookings for " + selectedProject.getProjectName() + " ===");
+            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
+                String applicantNRIC = entry.getKey();
+                Flat flat = entry.getValue();
+                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
+                
+                if (flat.getProject().equals(selectedProject)) {
+                    found = true;
+                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
+                    System.out.println("Age: " + applicant.getAge());
+                    System.out.println("Marital Status: " + applicant.getMaritalStatus());
+                    System.out.println("Flat Type: " + flat.getType());
+                }
+            }
+            
+            if (!found) {
+                System.out.println("No bookings found for " + selectedProject.getProjectName());
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void filterByAgeRange() {
+        System.out.print("\nEnter minimum age: ");
+        int minAge;
+        try {
+            minAge = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+            return;
+        }
+        
+        System.out.print("Enter maximum age: ");
+        int maxAge;
+        try {
+            maxAge = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+            return;
+        }
+        
+        if (minAge > maxAge) {
+            System.out.println("Minimum age cannot be greater than maximum age.");
+            return;
+        }
+        
+        Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
+        boolean found = false;
+        
+        System.out.println("\n=== Bookings for Applicants Aged " + minAge + " to " + maxAge + " ===");
+        for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
+            String applicantNRIC = entry.getKey();
+            Flat flat = entry.getValue();
+            Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
+            
+            if (applicant != null && applicant.getAge() >= minAge && applicant.getAge() <= maxAge) {
+                found = true;
+                System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
+                System.out.println("Age: " + applicant.getAge());
+                System.out.println("Marital Status: " + applicant.getMaritalStatus());
+                System.out.println("Project: " + flat.getProject().getProjectName());
+                System.out.println("Flat Type: " + flat.getType());
+            }
+        }
+        
+        if (!found) {
+            System.out.println("No bookings found for applicants in this age range.");
         }
     }
 }
