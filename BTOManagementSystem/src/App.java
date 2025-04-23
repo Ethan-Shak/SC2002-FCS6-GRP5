@@ -1783,26 +1783,15 @@ public class App {
     }
     
     private static void displayAllBookings() {
-        Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
-        if (bookings.isEmpty()) {
+        List<BookingReport> reports = ReportManager.getInstance().generateAllBookings();
+        if (reports.isEmpty()) {
             System.out.println("No bookings found.");
             return;
         }
         
         System.out.println("\n=== All Bookings ===");
-        for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
-            String applicantNRIC = entry.getKey();
-            Flat flat = entry.getValue();
-            BTOProject project = flat.getProject();
-            Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
-            
-            if (applicant != null) {
-                System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
-                System.out.println("Age: " + applicant.getAge());
-                System.out.println("Marital Status: " + applicant.getMaritalStatus());
-                System.out.println("Project: " + project.getProjectName());
-                System.out.println("Flat Type: " + flat.getType());
-            }
+        for (BookingReport report : reports) {
+            System.out.println(report.formatForDisplay());
         }
     }
     
@@ -1816,26 +1805,16 @@ public class App {
             int choice = Integer.parseInt(scanner.nextLine());
             MaritalStatus status = (choice == 1) ? MaritalStatus.MARRIED : MaritalStatus.SINGLE;
             
-            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
-            boolean found = false;
+            List<BookingReport> reports = ReportManager.getInstance().filterByMaritalStatus(status);
             
-            System.out.println("\n=== Bookings for " + status + " Applicants ===");
-            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
-                String applicantNRIC = entry.getKey();
-                Flat flat = entry.getValue();
-                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
-                
-                if (applicant != null && applicant.getMaritalStatus() == status) {
-                    found = true;
-                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
-                    System.out.println("Age: " + applicant.getAge());
-                    System.out.println("Project: " + flat.getProject().getProjectName());
-                    System.out.println("Flat Type: " + flat.getType());
-                }
+            if (reports.isEmpty()) {
+                System.out.println("No bookings found for " + status + " applicants.");
+                return;
             }
             
-            if (!found) {
-                System.out.println("No bookings found for " + status + " applicants.");
+            System.out.println("\n=== Bookings for " + status + " Applicants ===");
+            for (BookingReport report : reports) {
+                System.out.println(report.formatForDisplay());
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
@@ -1852,26 +1831,16 @@ public class App {
             int choice = Integer.parseInt(scanner.nextLine());
             RoomType type = (choice == 1) ? RoomType.TWO_ROOM : RoomType.THREE_ROOM;
             
-            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
-            boolean found = false;
+            List<BookingReport> reports = ReportManager.getInstance().filterByFlatType(type);
             
-            System.out.println("\n=== Bookings for " + type + " Flats ===");
-            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
-                String applicantNRIC = entry.getKey();
-                Flat flat = entry.getValue();
-                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
-                
-                if (flat.getType() == type) {
-                    found = true;
-                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
-                    System.out.println("Age: " + applicant.getAge());
-                    System.out.println("Marital Status: " + applicant.getMaritalStatus());
-                    System.out.println("Project: " + flat.getProject().getProjectName());
-                }
+            if (reports.isEmpty()) {
+                System.out.println("No bookings found for " + type + " flats.");
+                return;
             }
             
-            if (!found) {
-                System.out.println("No bookings found for " + type + " flats.");
+            System.out.println("\n=== Bookings for " + type + " Flats ===");
+            for (BookingReport report : reports) {
+                System.out.println(report.formatForDisplay());
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
@@ -1899,26 +1868,16 @@ public class App {
             }
             
             BTOProject selectedProject = projects.get(choice - 1);
-            Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
-            boolean found = false;
+            List<BookingReport> reports = ReportManager.getInstance().filterByProject(selectedProject);
             
-            System.out.println("\n=== Bookings for " + selectedProject.getProjectName() + " ===");
-            for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
-                String applicantNRIC = entry.getKey();
-                Flat flat = entry.getValue();
-                Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
-                
-                if (flat.getProject().equals(selectedProject)) {
-                    found = true;
-                    System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
-                    System.out.println("Age: " + applicant.getAge());
-                    System.out.println("Marital Status: " + applicant.getMaritalStatus());
-                    System.out.println("Flat Type: " + flat.getType());
-                }
+            if (reports.isEmpty()) {
+                System.out.println("No bookings found for " + selectedProject.getProjectName());
+                return;
             }
             
-            if (!found) {
-                System.out.println("No bookings found for " + selectedProject.getProjectName());
+            System.out.println("\n=== Bookings for " + selectedProject.getProjectName() + " ===");
+            for (BookingReport report : reports) {
+                System.out.println(report.formatForDisplay());
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a number.");
@@ -1949,27 +1908,16 @@ public class App {
             return;
         }
         
-        Map<String, Flat> bookings = FlatBookingManager.getAllBookings();
-        boolean found = false;
+        List<BookingReport> reports = ReportManager.getInstance().filterByAgeRange(minAge, maxAge);
         
-        System.out.println("\n=== Bookings for Applicants Aged " + minAge + " to " + maxAge + " ===");
-        for (Map.Entry<String, Flat> entry : bookings.entrySet()) {
-            String applicantNRIC = entry.getKey();
-            Flat flat = entry.getValue();
-            Applicant applicant = ApplicantController.getApplicant(applicantNRIC);
-            
-            if (applicant != null && applicant.getAge() >= minAge && applicant.getAge() <= maxAge) {
-                found = true;
-                System.out.println("\nApplicant: " + applicant.getName() + " (NRIC: " + applicantNRIC + ")");
-                System.out.println("Age: " + applicant.getAge());
-                System.out.println("Marital Status: " + applicant.getMaritalStatus());
-                System.out.println("Project: " + flat.getProject().getProjectName());
-                System.out.println("Flat Type: " + flat.getType());
-            }
+        if (reports.isEmpty()) {
+            System.out.println("No bookings found for applicants in this age range.");
+            return;
         }
         
-        if (!found) {
-            System.out.println("No bookings found for applicants in this age range.");
+        System.out.println("\n=== Bookings for Applicants Aged " + minAge + " to " + maxAge + " ===");
+        for (BookingReport report : reports) {
+            System.out.println(report.formatForDisplay());
         }
     }
 }
