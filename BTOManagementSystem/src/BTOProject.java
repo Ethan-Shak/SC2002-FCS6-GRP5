@@ -76,11 +76,21 @@ public BTOProject(String projectName, String neighbourhood, RoomType roomType, H
             return false;
         }
         
-        // Check if the officer is eligible to register for this project
-        if (!OfficerEligibilityManager.isEligibleForProject(officer, this)) {
-            return false;
+        // Skip eligibility check for officers loaded from CSV
+        if (!officer.isLoadedFromCSV()) {
+            // Check if the officer is eligible to register for this project
+            if (!OfficerEligibilityManager.isEligibleForProject(officer, this)) {
+                return false;
+            }
+            
+            // Only add the officer if they are already approved for this project
+            if (officer.getRegistrationStatus() != RegistrationStatus.APPROVED || 
+                officer.getPendingProject() != null) {
+                return false;
+            }
         }
         
+        // Add the officer to the project's officers list
         officers.add(officer);
         return true;
     }

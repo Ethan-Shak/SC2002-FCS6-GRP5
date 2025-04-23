@@ -12,15 +12,17 @@ public class OfficerController {
     private static Map<String, HDBOfficer> officers = new HashMap<>(); // NRIC as key
     private static final String CSV_FILE = "OfficerList.csv";
 
-    public static void loadOfficersFromCSV(String filePath) {
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    public static void loadOfficersFromCSV(String filename) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
             String line;
-            // Skip header line
-            br.readLine();
-            
+            boolean isFirstLine = true;
             while ((line = br.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
                 String[] data = line.split(",");
-                if (data.length >= 5) { // We need at least name, nric, age, maritalstatus, and password
+                if (data.length >= 5) {
                     String name = data[0].trim();
                     String nric = data[1].trim();
                     int age = Integer.parseInt(data[2].trim());
@@ -28,31 +30,45 @@ public class OfficerController {
                     String password = data[4].trim();
                     
                     HDBOfficer officer = new HDBOfficer(name, nric, age, maritalStatus, password);
-                    officers.put(nric, officer);
-
-                    // Handle project assignments if any (if the Projects column exists)
-                    if (data.length >= 6) {
-                        String projectsStr = data[5].trim();
-                        if (!projectsStr.isEmpty()) {
-                            String[] projectNames = projectsStr.split(";");
-                            for (String projectName : projectNames) {
-                                projectName = projectName.trim();
-                                if (!projectName.isEmpty()) {
-                                    BTOProject project = ProjectManager.getProjectByName(projectName);
-                                    if (project != null) {
-                                        officer.registerForProject(project);
-                                    }
-                                }
+                    System.out.println("Loading officer: " + name + " (NRIC: " + nric + ")");
+                    
+                    // Check if officer is in OfficerList.csv
+                    if (isOfficerInList(nric)) {
+                        officer.setLoadedFromCSV(true); // Set the flag for CSV-loaded officers
+                        System.out.println("Officer " + name + " found in OfficerList.csv");
+                        
+                        // If project is specified in CSV, register for that project
+                        if (data.length > 5 && !data[5].trim().isEmpty()) {
+                            String projectName = data[5].trim();
+                            System.out.println("Attempting to assign officer " + name + " to project: " + projectName);
+                            BTOProject project = ProjectManager.getProjectByName(projectName);
+                            if (project != null) {
+                                // For CSV-loaded officers, directly add to project and set as approved
+                                // Set the registration status to APPROVED first
+                                officer.setRegistrationStatus(RegistrationStatus.APPROVED);
+                                
+                                // Add the officer to the project's officers list directly
+                                project.getOfficers().add(officer);
+                                
+                                // Add the project to the officer's assigned projects
+                                officer.getAssignedProjects().add(project);
+                                
+                                System.out.println("HDB Officer " + officer.getName() + " automatically approved for project: " + project.getProjectName());
+                            } else {
+                                System.out.println("Project not found: " + projectName);
                             }
+                        } else {
+                            System.out.println("No project specified for officer " + name);
                         }
+                    } else {
+                        System.out.println("Officer " + name + " not found in OfficerList.csv");
                     }
+                    
+                    officers.put(nric, officer);
                 }
             }
-            System.out.println("Successfully loaded officers from CSV file.");
         } catch (IOException e) {
-            System.out.println("Error reading CSV file: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error parsing data: " + e.getMessage());
+            System.err.println("Error loading officers from CSV: " + e.getMessage());
         }
     }
 
@@ -131,5 +147,29 @@ public class OfficerController {
                 saveOfficersToCSV();
             }
         }
+    }
+
+    public static List<HDBOfficer> getAllOfficers() {
+        return new ArrayList<>(officers.values());
+    }
+
+    private static boolean isOfficerInList(String nric) {
+        try (BufferedReader br = new BufferedReader(new FileReader(CSV_FILE))) {
+            String line;
+            boolean isFirstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                String[] data = line.split(",");
+                if (data.length >= 2 && data[1].trim().equals(nric)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading OfficerList.csv: " + e.getMessage());
+        }
+        return false;
     }
 } 

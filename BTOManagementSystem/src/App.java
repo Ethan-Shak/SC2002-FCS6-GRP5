@@ -13,8 +13,8 @@ public class App {
         // Load data at startup
         ApplicantController.loadApplicantsFromCSV("ApplicantList.csv");
         ManagerController.loadManagersFromCSV("ManagerList.csv");
-        OfficerController.loadOfficersFromCSV("OfficerList.csv");
-        ProjectManager.loadProjectsFromCSV("ProjectList.csv");
+        ProjectManager.loadProjectsFromCSV("ProjectList.csv");  // Load projects first
+        OfficerController.loadOfficersFromCSV("OfficerList.csv");  // Then load officers
         
         boolean running = true;
         while (running) {
@@ -62,8 +62,9 @@ public class App {
             System.out.println("5. Toggle Project Visibility");
             System.out.println("6. Manage Applications");
             System.out.println("7. Manage Enquiries");
-            System.out.println("8. Change Password");
-            System.out.println("9. Logout");
+            System.out.println("8. Manage Officer Registrations");
+            System.out.println("9. Change Password");
+            System.out.println("10. Logout");
         } else if (currentUser instanceof HDBOfficer) {
             // HDB Officer menu (includes both applicant and officer options)
             System.out.println("2. Apply for Project");
@@ -331,9 +332,12 @@ public class App {
                     manageEnquiriesAsManager();
                     break;
                 case 8:
-                    handleChangePassword();
+                    manageOfficerRegistrations();
                     break;
                 case 9:
+                    handleChangePassword();
+                    break;
+                case 10:
                     currentUser = null;
                     System.out.println("Logged out successfully.");
                     break;
@@ -1512,55 +1516,43 @@ public class App {
         
         HDBOfficer officer = (HDBOfficer) currentUser;
         
-        // Display available projects
-        List<BTOProject> projects = ProjectManager.getAllProjects();
-        List<BTOProject> availableProjects = new ArrayList<>();
+        System.out.println("\n=== Register for Project ===");
         
-        System.out.println("\n=== Available Projects for Officer Registration ===");
-        int index = 1;
-        for (BTOProject project : projects) {
-            // Skip projects that already have the officer assigned
-            if (!officer.getAssignedProjects().contains(project)) {
-                System.out.println(index + ". " + project.getProjectName() + 
-                    " (" + project.getNeighbourhood() + ")");
-                System.out.println("   Application Period: " + 
-                    project.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
-                    " to " + 
-                    project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")));
-                System.out.println("   Current Officers: " + project.getNumberOfOfficers() + "/10");
-                availableProjects.add(project);
-                index++;
-            }
-        }
-        
-        if (availableProjects.isEmpty()) {
-            System.out.println("No available projects for registration.");
+        // Get list of visible projects
+        List<BTOProject> visibleProjects = ProjectManager.getAllProjects();
+        if (visibleProjects.isEmpty()) {
+            System.out.println("No projects available for registration.");
             return;
         }
         
-        System.out.print("Enter project number to register: ");
-        try {
-            int projectChoice = Integer.parseInt(scanner.nextLine());
-            if (projectChoice >= 1 && projectChoice <= availableProjects.size()) {
-                BTOProject selectedProject = availableProjects.get(projectChoice - 1);
-                
-                // Check if the officer is eligible to register for this project
-                if (OfficerEligibilityManager.isEligibleForProject(officer, selectedProject)) {
-                    // Try to add the officer to the project
-                    if (selectedProject.addOfficer(officer)) {
-                        // Register the officer for the project
-                        officer.registerForProject(selectedProject);
-                        System.out.println("Successfully registered for project: " + selectedProject.getProjectName());
-                    } else {
-                        System.out.println("Failed to register for project: " + selectedProject.getProjectName());
-                    }
-                }
-            } else {
-                System.out.println("Invalid project number.");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a number.");
+        // Display available projects
+        System.out.println("\nAvailable Projects:");
+        for (int i = 0; i < visibleProjects.size(); i++) {
+            BTOProject project = visibleProjects.get(i);
+            System.out.printf("%d. %s (Neighbourhood: %s)\n", 
+                i + 1, project.getProjectName(), project.getNeighbourhood());
         }
+        
+        // Get project selection
+        System.out.print("\nSelect project number (0 to cancel): ");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+        
+        if (choice == 0) {
+            return;
+        }
+        
+        if (choice < 1 || choice > visibleProjects.size()) {
+            System.out.println("Invalid project number.");
+            return;
+        }
+        
+        BTOProject selectedProject = visibleProjects.get(choice - 1);
+        
+        // First register the officer for the project
+        officer.registerForProject(selectedProject);
+        System.out.println("Registration request submitted for project: " + selectedProject.getProjectName());
+        System.out.println("Waiting for manager approval...");
     }
 
     private static void viewOfficerRegistrationStatus() {
@@ -1570,14 +1562,25 @@ public class App {
         }
         
         HDBOfficer officer = (HDBOfficer) currentUser;
-        String status = officer.getRegistrationStatus();
+        RegistrationStatus status = officer.getRegistrationStatus();
         List<BTOProject> assignedProjects = officer.getAssignedProjects();
+        BTOProject pendingProject = officer.getPendingProject();
         
         System.out.println("\n=== Officer Registration Status ===");
         System.out.println("Current Status: " + status);
         
+        if (pendingProject != null) {
+            System.out.println("\nPending Registration:");
+            System.out.println("- Project: " + pendingProject.getProjectName() + " (" + pendingProject.getNeighbourhood() + ")");
+            System.out.println("  Application Period: " + 
+                pendingProject.getApplicationOpeningDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")) + 
+                " to " + 
+                pendingProject.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")));
+            System.out.println("  Status: Waiting for manager approval");
+        }
+        
         if (!assignedProjects.isEmpty()) {
-            System.out.println("\nAssigned Projects:");
+            System.out.println("\nApproved Projects:");
             for (BTOProject project : assignedProjects) {
                 System.out.println("- " + project.getProjectName() + " (" + project.getNeighbourhood() + ")");
                 System.out.println("  Application Period: " + 
@@ -1585,8 +1588,107 @@ public class App {
                     " to " + 
                     project.getApplicationClosingDate().format(java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy")));
             }
-        } else {
-            System.out.println("\nNo projects assigned yet.");
+        }
+    }
+
+    private static void manageOfficerRegistrations() {
+        if (!(currentUser instanceof HDBManager)) {
+            System.out.println("This option is only available for HDB managers.");
+            return;
+        }
+        
+        HDBManager manager = (HDBManager) currentUser;
+        List<BTOProject> managedProjects = manager.getManagedProjects();
+        
+        if (managedProjects.isEmpty()) {
+            System.out.println("You are not managing any projects.");
+            return;
+        }
+        
+        System.out.println("\n=== Manage Officer Registrations ===");
+        System.out.println("Select a project to view pending registrations:");
+        for (int i = 0; i < managedProjects.size(); i++) {
+            BTOProject project = managedProjects.get(i);
+            System.out.println((i + 1) + ". " + project.getProjectName());
+        }
+        
+        System.out.print("Enter project number: ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice >= 1 && choice <= managedProjects.size()) {
+                BTOProject selectedProject = managedProjects.get(choice - 1);
+                handlePendingRegistrations(selectedProject);
+            } else {
+                System.out.println("Invalid project number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void handlePendingRegistrations(BTOProject project) {
+        List<HDBOfficer> pendingOfficers = new ArrayList<>();
+        
+        // Get all officers from the system
+        for (HDBOfficer officer : OfficerController.getAllOfficers()) {
+            if (officer.hasPendingRegistration() && officer.getPendingProject().equals(project)) {
+                pendingOfficers.add(officer);
+            }
+        }
+        
+        if (pendingOfficers.isEmpty()) {
+            System.out.println("No pending officer registrations for this project.");
+            return;
+        }
+        
+        System.out.println("\n=== Pending Officer Registrations for " + project.getProjectName() + " ===");
+        for (int i = 0; i < pendingOfficers.size(); i++) {
+            HDBOfficer officer = pendingOfficers.get(i);
+            System.out.println((i + 1) + ". Officer: " + officer.getName() + " (NRIC: " + officer.getNRIC() + ")");
+        }
+        
+        System.out.print("\nEnter officer number to review (0 to go back): ");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            if (choice == 0) {
+                return;
+            }
+            if (choice >= 1 && choice <= pendingOfficers.size()) {
+                HDBOfficer selectedOfficer = pendingOfficers.get(choice - 1);
+                reviewOfficerRegistration(selectedOfficer);
+            } else {
+                System.out.println("Invalid officer number.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
+        }
+    }
+    
+    private static void reviewOfficerRegistration(HDBOfficer officer) {
+        System.out.println("\n=== Review Officer Registration ===");
+        System.out.println("Officer: " + officer.getName() + " (NRIC: " + officer.getNRIC() + ")");
+        System.out.println("Project: " + officer.getPendingProject().getProjectName());
+        
+        System.out.println("\n1. Approve");
+        System.out.println("2. Reject");
+        System.out.print("Enter your choice: ");
+        
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+            switch (choice) {
+                case 1:
+                    officer.approveRegistration();
+                    System.out.println("Officer registration approved.");
+                    break;
+                case 2:
+                    officer.rejectRegistration();
+                    System.out.println("Officer registration rejected.");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a number.");
         }
     }
 }
