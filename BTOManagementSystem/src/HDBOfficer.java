@@ -15,17 +15,19 @@ public class HDBOfficer extends Applicant {
         this.loadedFromCSV = false; // Default to false
     }
 
-    public void registerForProject(BTOProject project) {
+    public boolean registerForProject(BTOProject project) {
         // Check if the officer is eligible to register for this project
         if (!OfficerEligibilityManager.isEligibleForProject(this, project)) {
-            return;
+            return false;
         }
         
         if (!assignedProjects.contains(project)) {
             // Set as pending for manual approval
             pendingProject = project;
             registrationStatus = RegistrationStatus.PENDING;
+            return true;
         }
+        return false;
     }
 
     public void approveRegistration() {

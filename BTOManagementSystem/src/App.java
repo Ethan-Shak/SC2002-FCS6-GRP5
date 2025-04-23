@@ -1550,9 +1550,10 @@ public class App {
         BTOProject selectedProject = visibleProjects.get(choice - 1);
         
         // First register the officer for the project
-        officer.registerForProject(selectedProject);
-        System.out.println("Registration request submitted for project: " + selectedProject.getProjectName());
-        System.out.println("Waiting for manager approval...");
+        if (officer.registerForProject(selectedProject)) {
+            System.out.println("Registration request submitted for project: " + selectedProject.getProjectName());
+            System.out.println("Waiting for manager approval...");
+        }
     }
 
     private static void viewOfficerRegistrationStatus() {
