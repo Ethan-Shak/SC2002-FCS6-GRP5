@@ -9,7 +9,7 @@ public class HDBOfficer extends Applicant {
 
     public HDBOfficer(String name, String nric, int age, MaritalStatus maritalStatus, String password) {
         super(name, nric, age, maritalStatus, password);
-        this.registrationStatus = RegistrationStatus.PENDING; // Default status
+        this.registrationStatus = RegistrationStatus.NOAPPLICATION; // Default status
         this.assignedProjects = new ArrayList<>();
         this.pendingProject = null;
         this.loadedFromCSV = false; // Default to false

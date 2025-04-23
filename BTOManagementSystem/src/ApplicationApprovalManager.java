@@ -90,11 +90,19 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
     
     // Helper method to check if an applicant is eligible for a project
     private static boolean isEligibleForProject(Applicant applicant, BTOProject project) {
-        // Check if applicant is an HDB Officer and is already assigned to this project
+        // Check if applicant is an HDB Officer
         if (applicant instanceof HDBOfficer) {
             HDBOfficer officer = (HDBOfficer) applicant;
+            
+            // Check if officer is already assigned to this project
             if (officer.getAssignedProjects().contains(project)) {
                 System.out.println("Error: As an HDB Officer assigned to this project, you cannot apply for it as an applicant.");
+                return false;
+            }
+            
+            // Check if officer has a pending registration for this project
+            if (officer.getPendingProject() != null && officer.getPendingProject().equals(project)) {
+                System.out.println("Error: As an HDB Officer with a pending registration for this project, you cannot apply for it as an applicant.");
                 return false;
             }
         }

@@ -15,60 +15,38 @@ public class OfficerController {
     public static void loadOfficersFromCSV(String filename) {
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
             String line;
-            boolean isFirstLine = true;
+            br.readLine(); // Skip header
             while ((line = br.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
-                String[] data = line.split(",");
-                if (data.length >= 5) {
-                    String name = data[0].trim();
-                    String nric = data[1].trim();
-                    int age = Integer.parseInt(data[2].trim());
-                    MaritalStatus maritalStatus = MaritalStatus.valueOf(data[3].trim().toUpperCase());
-                    String password = data[4].trim();
-                    
+                String[] values = line.split(",");
+                if (values.length >= 5) {
+                    String name = values[0].trim();
+                    String nric = values[1].trim();
+                    int age = Integer.parseInt(values[2].trim());
+                    MaritalStatus maritalStatus = MaritalStatus.valueOf(values[3].trim().toUpperCase());
+                    String password = values[4].trim();
+                    String projectName = values.length > 5 ? values[5].trim() : null;
+
                     HDBOfficer officer = new HDBOfficer(name, nric, age, maritalStatus, password);
-                    System.out.println("Loading officer: " + name + " (NRIC: " + nric + ")");
+                    officer.setLoadedFromCSV(true);
                     
-                    // Check if officer is in OfficerList.csv
-                    if (isOfficerInList(nric)) {
-                        officer.setLoadedFromCSV(true); // Set the flag for CSV-loaded officers
-                        System.out.println("Officer " + name + " found in OfficerList.csv");
-                        
-                        // If project is specified in CSV, register for that project
-                        if (data.length > 5 && !data[5].trim().isEmpty()) {
-                            String projectName = data[5].trim();
-                            System.out.println("Attempting to assign officer " + name + " to project: " + projectName);
-                            BTOProject project = ProjectManager.getProjectByName(projectName);
-                            if (project != null) {
-                                // For CSV-loaded officers, directly add to project and set as approved
-                                // Set the registration status to APPROVED first
-                                officer.setRegistrationStatus(RegistrationStatus.APPROVED);
-                                
-                                // Add the officer to the project's officers list directly
-                                project.getOfficers().add(officer);
-                                
-                                // Add the project to the officer's assigned projects
-                                officer.getAssignedProjects().add(project);
-                                
-                                System.out.println("HDB Officer " + officer.getName() + " automatically approved for project: " + project.getProjectName());
-                            } else {
-                                System.out.println("Project not found: " + projectName);
-                            }
+                    if (projectName != null && !projectName.isEmpty()) {
+                        BTOProject project = ProjectManager.getProjectByName(projectName);
+                        if (project != null) {
+                            // Set the pending project and status as if they went through normal registration
+                            officer.registerForProject(project);
+                            officer.approveRegistration();
+                            System.out.println("Loaded officer " + name + " and assigned to project " + projectName);
                         } else {
-                            System.out.println("No project specified for officer " + name);
+                            System.out.println("Warning: Project " + projectName + " not found for officer " + name);
                         }
-                    } else {
-                        System.out.println("Officer " + name + " not found in OfficerList.csv");
                     }
                     
                     officers.put(nric, officer);
                 }
             }
+            System.out.println("Officers loaded successfully from " + filename);
         } catch (IOException e) {
-            System.err.println("Error loading officers from CSV: " + e.getMessage());
+            System.out.println("Error loading officers from CSV: " + e.getMessage());
         }
     }
 
