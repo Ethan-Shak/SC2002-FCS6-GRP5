@@ -69,8 +69,8 @@ public class ApplicationApprovalManager implements IApplicationApprovalManager {
         // If the application is in BOOKED status, release the flat first
         if (application.getApplicationStatus() == ApplicationStatus.BOOKED) {
             FlatBookingManager.releaseFlat(applicant.getNRIC());
-        } else {
-            // For non-booked applications, just update the flat inventory
+        } else if (application.getApplicationStatus() == ApplicationStatus.SUCCESSFUL) {
+            // For successful applications, update the flat inventory
             BTOProject project = application.getProject();
             RoomType roomType = application.getRoomType();
             
